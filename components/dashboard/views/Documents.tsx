@@ -1,10 +1,11 @@
-import { DOCS } from "@/lib/dashboard/mock";
 import type { DocRecord, RoleConfig, RoleKey } from "@/lib/dashboard/mock";
+import { isModelDoc } from "@/lib/dashboard/auditClient";
 import { Tag, ViewHead, RoleBanner } from "../ui";
 
 interface Props {
   role: RoleConfig;
   roleKey: RoleKey;
+  docs: DocRecord[];
   selectedDoc: string | null;
   onSelect: (id: string) => void;
 }
@@ -66,10 +67,10 @@ function DeltaPanel({ doc, roleKey }: { doc: DocRecord; roleKey: RoleKey }) {
   );
 }
 
-export function Documents({ role, roleKey, selectedDoc, onSelect }: Props) {
-  let docs = DOCS;
-  if (role.docs === "models") docs = DOCS.filter((d) => ["pscad", "psse"].includes(d.id));
-  if (role.docs === "summary") docs = DOCS.filter((d) => !["pscad", "psse"].includes(d.id));
+export function Documents({ role, roleKey, docs: allDocs, selectedDoc, onSelect }: Props) {
+  let docs = allDocs;
+  if (role.docs === "models") docs = allDocs.filter((d) => isModelDoc(d.id));
+  if (role.docs === "summary") docs = allDocs.filter((d) => !isModelDoc(d.id));
 
   const active = docs.find((d) => d.id === selectedDoc) ?? null;
 

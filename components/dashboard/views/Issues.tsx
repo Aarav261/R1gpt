@@ -1,9 +1,9 @@
-import { ISSUES } from "@/lib/dashboard/mock";
-import type { RoleConfig } from "@/lib/dashboard/mock";
+import type { RoleConfig, IssueRecord } from "@/lib/dashboard/mock";
 import { Tag, Tile, TileHead, ViewHead, RoleBanner } from "../ui";
 
 interface Props {
   role: RoleConfig;
+  issues: IssueRecord[];
   onDraft: (issueId: string) => void;
 }
 
@@ -13,13 +13,15 @@ function sevTag(sev: string) {
   return <Tag tone="grey">Minor</Tag>;
 }
 
-export function Issues({ role, onDraft }: Props) {
+export function Issues({ role, issues: allIssues, onDraft }: Props) {
   const banner = (
     <RoleBanner html={`Viewing as <b style="color:#0f62fe">${role.label}</b> — ${role.access}`} />
   );
 
   if (role.issues === "summary") {
-    const open = ISSUES.filter((i) => i.status === "open").length;
+    const open = allIssues.filter((i) => i.status === "open").length;
+    const blocking = allIssues.filter((i) => i.sev === "blocking").length;
+    const resolved = allIssues.filter((i) => i.status === "resolved").length;
     return (
       <section>
         <ViewHead
@@ -35,11 +37,11 @@ export function Issues({ role, onDraft }: Props) {
               <div className="text-xs text-ink-muted">open issues</div>
             </div>
             <div>
-              <div className="cds-display text-4xl text-error">1</div>
+              <div className="cds-display text-4xl text-error">{blocking}</div>
               <div className="text-xs text-ink-muted">blocking</div>
             </div>
             <div>
-              <div className="cds-display text-4xl text-success">1</div>
+              <div className="cds-display text-4xl text-success">{resolved}</div>
               <div className="text-xs text-ink-muted">resolved this round</div>
             </div>
           </div>
@@ -52,8 +54,8 @@ export function Issues({ role, onDraft }: Props) {
     );
   }
 
-  let issues = ISSUES;
-  if (role.issues === "model-only") issues = ISSUES.filter((i) => i.clause === "S5.2.5.5");
+  let issues = allIssues;
+  if (role.issues === "model-only") issues = allIssues.filter((i) => i.clause === "S5.2.5.5");
 
   return (
     <section>

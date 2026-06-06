@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { DocumentType, UploadedDocument } from "@/types/documents";
 import { extractDocument } from "@/lib/extraction/extractor";
 import { buildAuditReport } from "@/lib/report/builder";
-import { reportStore } from "@/lib/report/store";
+import { setLatestReport } from "@/lib/report/store";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
             send("scoring_complete", { readiness }),
         });
 
-        reportStore.set(report.audit_id, report);
+        setLatestReport(report);
 
         send("report_complete", report);
       } catch (err) {
