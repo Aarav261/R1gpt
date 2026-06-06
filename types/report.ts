@@ -24,24 +24,48 @@ export interface Finding {
 
 export type ClauseStatus = "pass" | "fail" | "partial" | "missing";
 
-export interface TimeToApproval {
-  p10: number;
-  p50: number;
-  p90: number;
+export type RfiCycleRiskBand = "minimal" | "elevated" | "high" | "severe";
+
+export interface RfiCycleRisk {
+  band: RfiCycleRiskBand;
+  rationale: string;
+}
+
+/**
+ * Per-assessor check result. `applicable` is false when the assessor lacked the
+ * inputs it needs (e.g. no FAT report for the impedance-delta check), so it is
+ * excluded from the "X of N checks passed" coverage denominator rather than
+ * silently counted as a pass.
+ */
+export interface CheckResult {
+  name: string;
+  label: string;
+  applicable: boolean;
+  passed: boolean;
 }
 
 export interface AuditReport {
   audit_id: string;
   project_name: string;
   timestamp: string;
-  approval_probability: number;
-  confidence_interval: [number, number];
+  /**
+   * Deterministic readiness index in [0, readiness_ceiling] — a severity-weighted
+   * ranking of what to fix first, NOT a calibrated probability of AEMO approval.
+   */
+  readiness_index: number;
+  /** Max the automated checklist can award (<100; reserved for engineer review). */
+  readiness_ceiling: number;
   materiality_class: "low" | "medium" | "high" | "dmat_triggering";
   findings: Finding[];
+  /** Per-assessor pass/applicable breakdown behind the readiness index. */
+  checks: CheckResult[];
   missing_evidence: string[];
   predicted_rfi_questions: string[];
   recommended_actions: string[];
-  time_to_approval_months: TimeToApproval;
+  /** Qualitative RFI-cycle risk band — replaces fabricated month percentiles. */
+  rfi_cycle_risk: RfiCycleRisk;
   clause_scorecard: Record<string, ClauseStatus>;
+  /** Schema-backed documents whose extraction returned null (honesty signal). */
+  extraction_warnings: string[];
   psmg_version: "3.0";
 }

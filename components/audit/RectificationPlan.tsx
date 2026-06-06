@@ -4,10 +4,10 @@
  * render a finding reference and effort badge.
  */
 const EFFORT_STYLE: Record<string, string> = {
-  hours: "text-accent-green border-accent-green/40",
-  days: "text-accent-blue border-accent-blue/40",
-  weeks: "text-accent-amber border-accent-amber/40",
-  months: "text-accent-red border-accent-red/40",
+  hours: "text-success border-success/40",
+  days: "text-ibm-blue border-ibm-blue/40",
+  weeks: "text-warning border-warning/40",
+  months: "text-error border-error/40",
 };
 
 function parseAction(raw: string): {
@@ -27,7 +27,7 @@ function parseAction(raw: string): {
 export function RectificationPlan({ actions }: { actions: string[] }) {
   if (actions.length === 0) {
     return (
-      <p className="rounded-lg border border-border bg-bg-surface p-4 font-sans text-sm text-text-muted">
+      <p className="rounded-none border border-hairline bg-surface-1 p-4 font-sans text-sm text-ink-subtle">
         No rectification actions required.
       </p>
     );
@@ -40,23 +40,23 @@ export function RectificationPlan({ actions }: { actions: string[] }) {
         return (
           <li
             key={i}
-            className="flex items-start gap-3 rounded-lg border border-border bg-bg-surface p-3"
+            className="flex items-start gap-3 rounded-none border border-hairline bg-surface-1 p-3"
           >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-bg-highlight font-mono text-xs font-semibold text-text-secondary">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-none bg-surface-2 font-mono text-xs font-semibold text-ink-muted">
               {i + 1}
             </span>
             <div className="flex-1">
-              <p className="font-sans text-sm text-text-primary">{action}</p>
+              <p className="font-sans text-sm text-ink">{action}</p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 {finding && (
-                  <span className="font-mono text-[11px] text-text-muted">
+                  <span className="font-mono text-[11px] text-ink-subtle">
                     {finding}
                   </span>
                 )}
                 {effort && (
                   <span
-                    className={`rounded border px-2 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-wider ${
-                      EFFORT_STYLE[effort] ?? "text-text-muted border-border"
+                    className={`rounded-none border px-2 py-0.5 font-sans text-[11px] font-semibold uppercase tracking-wider ${
+                      EFFORT_STYLE[effort] ?? "text-ink-subtle border-hairline"
                     }`}
                   >
                     {effort}

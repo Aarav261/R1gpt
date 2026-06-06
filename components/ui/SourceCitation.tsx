@@ -17,20 +17,20 @@ export function SourceCitation({
   psmgRef,
 }: SourceCitationProps) {
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-text-muted">
-      <span className="text-text-muted">Source:</span>
-      <span className="text-text-secondary">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-ink-subtle">
+      <span className="text-ink-subtle">Source:</span>
+      <span className="text-ink-muted">
         {sourceDocument ?? "—"}
       </span>
       {sourceField && (
         <>
-          <span className="text-text-muted">→</span>
-          <span className="text-text-secondary">{sourceField}</span>
+          <span className="text-ink-subtle">→</span>
+          <span className="text-ink-muted">{sourceField}</span>
         </>
       )}
       {psmgRef && (
         <>
-          <span className="text-text-muted">·</span>
+          <span className="text-ink-subtle">·</span>
           <PsmgBadge refText={psmgRef} />
         </>
       )}

@@ -1,24 +1,26 @@
 import type { Metadata } from "next";
-import { Inter, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+// IBM Plex Sans carries the full hierarchy (weight 300 display → 600 emphasis).
+const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  weight: ["300", "400", "600"],
+  variable: "--font-plex-sans",
   display: "swap",
 });
 
 const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500"],
   variable: "--font-plex-mono",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "R1GPT — Connection Approval Audit Engine",
+  title: "R1GPT — Connection Approval Workspace",
   description:
-    "AI audit engine for R1 connection approval submissions in Australia's NEM. Clause-by-clause verdicts grounded in AEMO Power System Model Guidelines v3.0.",
+    "Pre-submission audit, document deltas and AI-drafted RFI responses for NEM grid connection approvals.",
 };
 
 export default function RootLayout({
@@ -27,10 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${plexMono.variable}`}>
-      <body className="font-sans bg-bg-primary text-text-primary antialiased">
-        {children}
-      </body>
+    <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }

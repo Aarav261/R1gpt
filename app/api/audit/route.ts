@@ -73,8 +73,8 @@ export async function POST(req: Request) {
         const report = await buildAuditReport(openai, project_name, docs, {
           onAssessmentComplete: (findingCount) =>
             send("assessment_complete", { findingCount }),
-          onScoringComplete: (probability) =>
-            send("scoring_complete", { probability }),
+          onScoringComplete: (readiness) =>
+            send("scoring_complete", { readiness }),
         });
 
         reportStore.set(report.audit_id, report);

@@ -2,70 +2,149 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────
+   IBM Carbon Gray 100 dark theme as CSS custom properties (DESIGN.md).
+   Tailwind tokens resolve through these, so the whole surface is dark.
+   ───────────────────────────────────────────────────────────── */
 :root {
-  --bg-primary: #0a0a0b;
-  --bg-surface: #111113;
-  --bg-raised: #1a1a1f;
-  --bg-highlight: #22222a;
-  --border: #2a2a35;
-  --border-active: #4a4a60;
-  --text-primary: #e8e8f0;
-  --text-secondary: #8888a0;
-  --text-muted: #55556a;
-  --accent-blue: #4f8ef7;
-  --accent-green: #22c55e;
-  --accent-amber: #f59e0b;
-  --accent-red: #ef4444;
-  --accent-purple: #a78bfa;
-}
-
-html,
-body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+  --canvas: #161616; /* background */
+  --surface-1: #262626; /* layer-01 */
+  --surface-2: #393939; /* layer-02 */
+  --ink: #f4f4f4; /* text-primary */
+  --ink-muted: #c6c6c6; /* text-secondary */
+  --ink-subtle: #8d8d8d; /* text-helper */
+  --hairline: #393939; /* border-subtle */
+  --hairline-strong: #f4f4f4; /* border-inverse */
+  --ibm-blue: #4589ff; /* interactive — Blue 50 reads on dark */
+  --ibm-blue-60: #78a9ff;
+  --ibm-blue-80: #a6c8ff;
+  --ibm-blue-hover: #5c93ff;
+  --success: #42be65;
+  --warning: #f1c21b;
+  --error: #fa4d56;
 }
 
 * {
   box-sizing: border-box;
 }
 
-::selection {
-  background: rgba(79, 142, 247, 0.3);
+html,
+body {
+  height: 100%;
 }
 
-/* Thin industrial scrollbars */
-::-webkit-scrollbar {
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-plex-sans), "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: 0.16px; /* Carbon precision detail — do not remove. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Carbon's signature light-weight display treatment. */
+.cds-display {
+  font-weight: 300;
+  letter-spacing: -0.4px;
+}
+
+/* Thin Carbon scrollbar — keeps the chrome flat. */
+*::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-::-webkit-scrollbar-track {
-  background: var(--bg-surface);
+*::-webkit-scrollbar-thumb {
+  background: var(--surface-2);
+  border: 2px solid var(--canvas);
 }
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-active);
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-subtle);
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -400px 0;
+@layer components {
+  /* Status tag — Carbon tag, square corners, low-chroma fills. */
+  .cds-tag {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-normal tracking-carbon;
+    border-radius: 2px;
   }
-  100% {
-    background-position: 400px 0;
+  .cds-tag--blue {
+    background: #0043ce;
+    color: #d0e2ff;
   }
-}
+  .cds-tag--green {
+    background: #0e6027;
+    color: #a7f0ba;
+  }
+  .cds-tag--amber {
+    background: #684e00;
+    color: #fcf4d6;
+  }
+  .cds-tag--red {
+    background: #a2191f;
+    color: #ffd7d9;
+  }
+  .cds-tag--grey {
+    background: var(--surface-2);
+    color: var(--ink-muted);
+  }
 
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--bg-raised) 0px,
-    var(--bg-highlight) 200px,
-    var(--bg-raised) 400px
-  );
-  background-size: 800px 100%;
-  animation: shimmer 1.4s infinite linear;
+  /* Carbon button family — flat, square, 14px label. */
+  .cds-btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-normal tracking-carbon transition-colors;
+    border-radius: 0;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .cds-btn--primary {
+    background: var(--ibm-blue);
+    color: #fff;
+  }
+  .cds-btn--primary:hover {
+    background: var(--ibm-blue-hover, #0050e6);
+  }
+  .cds-btn--secondary {
+    background: #6f6f6f;
+    color: #fff;
+  }
+  .cds-btn--secondary:hover {
+    background: #5e5e5e;
+  }
+  .cds-btn--tertiary {
+    background: var(--canvas);
+    color: var(--ibm-blue);
+    border-color: var(--ibm-blue);
+  }
+  .cds-btn--tertiary:hover {
+    background: rgba(69, 137, 255, 0.16);
+  }
+  .cds-btn--ghost {
+    background: transparent;
+    color: var(--ibm-blue);
+  }
+  .cds-btn--ghost:hover {
+    background: rgba(69, 137, 255, 0.16);
+  }
+  .cds-btn--danger {
+    background: var(--error);
+    color: #fff;
+  }
+  .cds-btn--danger:disabled,
+  .cds-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .cds-btn--sm {
+    @apply px-3 py-2 text-xs;
+  }
+
+  /* Hairline tile — Carbon card, no shadow. */
+  .cds-tile {
+    background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: 0;
+  }
 }

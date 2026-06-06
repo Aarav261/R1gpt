@@ -8,12 +8,44 @@ import { AuditReport, Finding } from "@/types/report";
 import { runAssessors } from "@/lib/assessors/runner";
 import { getGPS } from "@/lib/assessors/helpers";
 import {
-  computeApprovalProbability,
-  computeConfidenceInterval,
+  CHECKLIST_CEILING,
   computeMateriality,
-  computeTimeToApproval,
+  computeReadinessIndex,
+  computeRfiCycleRisk,
 } from "@/lib/scoring/engine";
 import { generateRFIs } from "./rfi";
+
+/** Document types that carry a schema-backed extraction model. */
+const SCHEMA_BACKED_DOC_TYPES = new Set<DocumentType>([
+  DocumentType.GPS_BASELINE,
+  DocumentType.FAT_REPORT,
+  DocumentType.OEM_METADATA,
+]);
+
+const DOC_TYPE_LABEL: Partial<Record<DocumentType, string>> = {
+  [DocumentType.GPS_BASELINE]: "GPS baseline",
+  [DocumentType.FAT_REPORT]: "FAT report",
+  [DocumentType.OEM_METADATA]: "OEM metadata",
+};
+
+/**
+ * Surface schema-backed documents whose extraction returned null (LLM output
+ * failed Zod validation, or parsing/AI errored). These are excluded from clause
+ * assessment, so naming them turns an invisible server log into a visible
+ * honesty signal in the report.
+ */
+function buildExtractionWarnings(docs: UploadedDocument[]): string[] {
+  const out: string[] = [];
+  for (const d of docs) {
+    if (SCHEMA_BACKED_DOC_TYPES.has(d.doc_type) && d.extracted == null) {
+      const label = DOC_TYPE_LABEL[d.doc_type] ?? d.doc_type;
+      out.push(
+        `${label} (${d.filename}) could not be structured — extraction failed schema validation and was excluded from clause assessment. Findings for this document may be incomplete.`
+      );
+    }
+  }
+  return out;
+}
 
 /** Derive the missing-evidence checklist from findings flagged absent. */
 function buildMissingEvidence(findings: Finding[]): string[] {
@@ -48,7 +80,7 @@ function buildRecommendedActions(findings: Finding[]): string[] {
 
 export interface BuildHooks {
   onAssessmentComplete?: (findingCount: number) => void;
-  onScoringComplete?: (probability: number) => void;
+  onScoringComplete?: (readinessIndex: number) => void;
 }
 
 export async function buildAuditReport(
@@ -57,17 +89,13 @@ export async function buildAuditReport(
   docs: UploadedDocument[],
   hooks: BuildHooks = {}
 ): Promise<AuditReport> {
-  const { findings, scorecard } = await runAssessors(docs);
+  const { findings, scorecard, checks } = await runAssessors(docs);
   hooks.onAssessmentComplete?.(findings.length);
 
-  const approval_probability = computeApprovalProbability(findings);
-  const confidence_interval = computeConfidenceInterval(
-    approval_probability,
-    findings.length
-  );
-  const time_to_approval_months = computeTimeToApproval(findings);
+  const readiness_index = computeReadinessIndex(findings);
+  const rfi_cycle_risk = computeRfiCycleRisk(findings);
   const materiality_class = computeMateriality(findings);
-  hooks.onScoringComplete?.(approval_probability);
+  hooks.onScoringComplete?.(readiness_index);
 
   const gps = getGPS(docs);
   const predicted_rfi_questions = await generateRFIs(
@@ -81,15 +109,17 @@ export async function buildAuditReport(
     audit_id: nanoid(),
     project_name,
     timestamp: new Date().toISOString(),
-    approval_probability,
-    confidence_interval,
+    readiness_index,
+    readiness_ceiling: CHECKLIST_CEILING,
     materiality_class,
     findings,
+    checks,
     missing_evidence: buildMissingEvidence(findings),
     predicted_rfi_questions,
     recommended_actions: buildRecommendedActions(findings),
-    time_to_approval_months,
+    rfi_cycle_risk,
     clause_scorecard: scorecard,
+    extraction_warnings: buildExtractionWarnings(docs),
     psmg_version: "3.0",
   };
 }

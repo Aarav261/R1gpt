@@ -28,23 +28,23 @@ const STATUS_STYLE: Record<
 > = {
   pass: {
     label: "PASS",
-    cls: "border-accent-green/40 bg-accent-green/5",
-    dot: "bg-accent-green text-accent-green",
+    cls: "border-success/40 bg-success/5",
+    dot: "bg-success text-success",
   },
   fail: {
     label: "FAIL",
-    cls: "border-accent-red/40 bg-accent-red/5",
-    dot: "bg-accent-red text-accent-red",
+    cls: "border-error/40 bg-error/5",
+    dot: "bg-error text-error",
   },
   partial: {
     label: "PARTIAL",
-    cls: "border-accent-amber/40 bg-accent-amber/5",
-    dot: "bg-accent-amber text-accent-amber",
+    cls: "border-warning/40 bg-warning/5",
+    dot: "bg-warning text-warning",
   },
   missing: {
     label: "MISSING",
-    cls: "border-border bg-bg-surface",
-    dot: "bg-text-muted text-text-muted",
+    cls: "border-hairline bg-surface-1",
+    dot: "bg-ink-subtle text-ink-subtle",
   },
 };
 
@@ -61,19 +61,19 @@ export function ClauseScorecard({
         return (
           <div
             key={c.clause}
-            className={`flex flex-col rounded-lg border p-3 ${s.cls}`}
+            className={`flex flex-col rounded-none border p-3 ${s.cls}`}
           >
             <div className="flex items-center justify-between">
-              <span className="font-mono text-sm font-semibold text-text-primary">
+              <span className="font-mono text-sm font-semibold text-ink">
                 {c.clause}
               </span>
               <span
-                className={`font-mono text-[11px] font-semibold tracking-wider ${s.dot.split(" ")[1]}`}
+                className={`font-sans text-[11px] font-semibold tracking-wider ${s.dot.split(" ")[1]}`}
               >
                 {s.label}
               </span>
             </div>
-            <span className="mt-1 font-sans text-xs text-text-secondary">
+            <span className="mt-1 font-sans text-xs text-ink-muted">
               {c.label}
             </span>
             <div className="mt-2">

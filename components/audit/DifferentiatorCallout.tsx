@@ -2,7 +2,7 @@ interface DifferentiatorCalloutProps {
   findingCount: number;
   dmatCount: number;
   highCount: number;
-  probability: number; // 0..1
+  readinessIndex: number; // 0..100
 }
 
 /**
@@ -14,29 +14,29 @@ export function DifferentiatorCallout({
   findingCount,
   dmatCount,
   highCount,
-  probability,
+  readinessIndex,
 }: DifferentiatorCalloutProps) {
-  const pct = Math.round(probability * 100);
+  const index = Math.round(readinessIndex);
   return (
-    <div className="rounded-lg border border-accent-purple/40 bg-accent-purple/5 p-4">
+    <div className="border border-hairline border-l-2 border-l-ibm-blue bg-surface-1 p-4">
       <div className="mb-2 flex items-center gap-2">
-        <span className="font-mono text-sm font-semibold text-accent-purple">
+        <span className="font-sans text-sm font-semibold text-ibm-blue">
           Why not just ask ChatGPT?
         </span>
       </div>
-      <p className="font-sans text-sm leading-relaxed text-text-secondary">
+      <p className="font-sans text-sm leading-relaxed text-ink-muted">
         A general LLM would read your documents and offer opinions.{" "}
-        <span className="text-text-primary">R1GPT ran {findingCount}</span>{" "}
+        <span className="text-ink">R1GPT ran {findingCount}</span>{" "}
         deterministic checks grounded in AEMO&apos;s Power System Model
         Guidelines v3.0. It found{" "}
-        <span className="font-mono text-accent-red">{dmatCount}</span>{" "}
+        <span className="font-mono text-error">{dmatCount}</span>{" "}
         DMAT-triggering and{" "}
-        <span className="font-mono text-accent-amber">{highCount}</span>{" "}
+        <span className="font-mono text-warning">{highCount}</span>{" "}
         high-severity issues — each traceable to a specific document field and
         PSMG section. The{" "}
-        <span className="font-mono text-text-primary">{pct}%</span> approval
-        probability reflects a severity-weighted penalty across all findings,
-        not a sentiment score.
+        <span className="font-mono text-ink">{index}/100</span> readiness index
+        is a severity-weighted ranking of what to fix first, not a probability
+        of approval and not a sentiment score.
       </p>
     </div>
   );

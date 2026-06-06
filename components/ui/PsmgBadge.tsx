@@ -13,7 +13,7 @@ export function PsmgBadge({ refText }: { refText: string | null }) {
   return (
     <span
       title={refText}
-      className="inline-flex items-center rounded border border-accent-purple/40 bg-accent-purple/10 px-2 py-0.5 font-mono text-[11px] font-medium text-accent-purple"
+      className="inline-flex items-center rounded-none bg-[#d0e2ff] px-2 py-0.5 font-mono text-[11px] font-medium text-[#002d9c]"
     >
       PSMG §{section}
     </span>
