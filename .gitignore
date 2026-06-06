@@ -8,3 +8,6 @@ out/
 coverage/
 synthetic/fixtures/*.pdf
 synthetic/fixtures/**/*.pdf
+
+# TypeScript build info
+*.tsbuildinfo
