@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.env.local
+.env
+out/
+*.log
+.DS_Store
+coverage/
+synthetic/fixtures/*.pdf
