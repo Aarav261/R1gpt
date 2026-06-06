@@ -91,10 +91,10 @@ export default function HomePage() {
     [files, projectName, running]
   );
 
-  const loadDemo = useCallback(async () => {
+  const loadDemo = useCallback(async (set: "fail" | "pass" = "fail") => {
     setError(null);
     try {
-      const res = await fetch("/api/demo");
+      const res = await fetch(`/api/demo?set=${set}`);
       const data = await res.json();
       setProjectName(data.project_name);
       const next: FileMap = {};
@@ -250,11 +250,19 @@ export default function HomePage() {
           {running ? "Auditing…" : "Run Audit"}
         </button>
         <button
-          onClick={loadDemo}
+          onClick={() => loadDemo("fail")}
           disabled={running}
           className="font-sans text-sm text-ibm-blue underline-offset-4 hover:underline disabled:opacity-50"
         >
-          Load demo documents
+          Load failing demo
+        </button>
+        <span className="font-mono text-xs text-ink-subtle">·</span>
+        <button
+          onClick={() => loadDemo("pass")}
+          disabled={running}
+          className="font-sans text-sm text-success underline-offset-4 hover:underline disabled:opacity-50"
+        >
+          Load passing demo
         </button>
       </div>
 
