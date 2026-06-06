@@ -44,6 +44,24 @@ export interface CheckResult {
   passed: boolean;
 }
 
+/** Lightweight per-document summary of what was uploaded, for workspace views. */
+export interface ReportDocument {
+  doc_type: string;
+  filename: string;
+  /** Whether this document type carries a schema-backed extraction model. */
+  schema_backed: boolean;
+  /** True when structured extraction produced a model (not just raw text). */
+  extracted: boolean;
+}
+
+/** Parsed OEM model identity, surfaced when OEM metadata extraction succeeds. */
+export interface OemSummary {
+  vendor: string | null;
+  model_name: string | null;
+  firmware_version: string | null;
+  dmat_baseline_version: string | null;
+}
+
 export interface AuditReport {
   audit_id: string;
   project_name: string;
@@ -67,5 +85,9 @@ export interface AuditReport {
   clause_scorecard: Record<string, ClauseStatus>;
   /** Schema-backed documents whose extraction returned null (honesty signal). */
   extraction_warnings: string[];
+  /** Lightweight summary of the uploaded documents (for workspace views). */
+  documents?: ReportDocument[];
+  /** Parsed OEM model identity, when OEM metadata extraction succeeded. */
+  oem_summary?: OemSummary | null;
   psmg_version: "3.0";
 }

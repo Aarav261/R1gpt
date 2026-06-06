@@ -1,19 +1,32 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ROLES,
   PROJECT,
   AUDIT,
+  DOCS,
+  ISSUES,
+  ACTIVITY,
+  DRAFTS,
   type RoleKey,
   type AuditItem,
 } from "@/lib/dashboard/mock";
 import {
   runDemoAudit,
   reportToAuditItems,
+  reportToDocItems,
+  reportToIssueItems,
+  reportToDrafts,
+  reportToActivity,
   type AuditProgress,
 } from "@/lib/dashboard/auditClient";
+import {
+  loadLatestReportSync,
+  fetchLatestReport,
+  saveLatestReport,
+} from "@/lib/dashboard/reportState";
 import type { AuditReport } from "@/types/report";
 import { Overview } from "./views/Overview";
 import { Documents } from "./views/Documents";
@@ -24,14 +37,7 @@ import { Intelligence } from "./views/Intelligence";
 import { AiDrawer } from "./AiDrawer";
 
 type ViewKey = "overview" | "documents" | "audit" | "issues" | "models" | "intel";
-
-const NAV: { key: ViewKey; label: string; badge?: string; tone?: "red" | "amber"; locked?: boolean }[] = [
-  { key: "overview", label: "Overview" },
-  { key: "documents", label: "Documents", badge: "v3.2", tone: "amber" },
-  { key: "audit", label: "Pre-Submission Audit", badge: "2", tone: "red" },
-  { key: "issues", label: "RFIs / Issues", badge: "4", tone: "red" },
-  { key: "models", label: "OEM Models" },
-];
+type NavItem = { key: ViewKey; label: string; badge?: string; tone?: "red" | "amber" };
 
 export function Dashboard() {
   const [view, setView] = useState<ViewKey>("overview");
@@ -47,16 +53,76 @@ export function Dashboard() {
 
   const role = ROLES[roleKey];
 
+  // Hydrate the latest real audit on mount: sessionStorage first (instant),
+  // then the server store as source of truth (covers a fresh tab / reload).
+  useEffect(() => {
+    const cached = loadLatestReportSync();
+    if (cached) setLiveReport(cached);
+    fetchLatestReport().then((r) => {
+      if (r) setLiveReport(r);
+    });
+  }, []);
+
+  // ---- Live projections (fall back to static mock when no report yet) ----
   const auditItems: AuditItem[] = useMemo(
     () => (liveReport ? reportToAuditItems(liveReport) : AUDIT),
     [liveReport]
   );
+  const docItems = useMemo(
+    () => (liveReport ? reportToDocItems(liveReport) : DOCS),
+    [liveReport]
+  );
+  const issueItems = useMemo(
+    () => (liveReport ? reportToIssueItems(liveReport) : ISSUES),
+    [liveReport]
+  );
+  const draftMap = useMemo(
+    () => (liveReport ? reportToDrafts(liveReport) : DRAFTS),
+    [liveReport]
+  );
+  const activity = useMemo(
+    () => (liveReport ? reportToActivity(liveReport) : ACTIVITY),
+    [liveReport]
+  );
+
+  const projectName = liveReport?.project_name ?? PROJECT.name;
   const blockingCount = auditItems.filter((a) => a.s === "fail").length;
+  const openIssues = issueItems.filter((i) => i.status === "open").length;
 
   // Readiness: live readiness index when available, else mockup baseline.
   const readiness = liveReport
     ? Math.round(liveReport.readiness_index)
     : 72;
+
+  // Sidebar badges reflect live counts once an audit exists.
+  const nav: NavItem[] = [
+    { key: "overview", label: "Overview" },
+    {
+      key: "documents",
+      label: "Documents",
+      badge: liveReport ? String(docItems.length) : "v3.2",
+      tone: "amber",
+    },
+    {
+      key: "audit",
+      label: "Pre-Submission Audit",
+      badge: blockingCount > 0 ? String(blockingCount) : undefined,
+      tone: "red",
+    },
+    {
+      key: "issues",
+      label: "RFIs / Issues",
+      badge: openIssues > 0 ? String(openIssues) : undefined,
+      tone: "red",
+    },
+    { key: "models", label: "OEM Models" },
+  ];
+
+  // Resolve the drawer's issue + AI draft from whichever issue set is active.
+  const activeIssue = drawerIssue
+    ? issueItems.find((i) => i.id === drawerIssue) ?? null
+    : null;
+  const activeDraft = drawerIssue ? draftMap[drawerIssue] ?? null : null;
 
   function selectDoc(id: string) {
     setSelectedDoc((cur) => (cur === id ? null : id));
@@ -74,6 +140,7 @@ export function Dashboard() {
     try {
       const report = await runDemoAudit(setProgress);
       setLiveReport(report);
+      saveLatestReport(report);
     } catch (err) {
       setAuditError(err instanceof Error ? err.message : "Audit failed.");
     } finally {
@@ -123,21 +190,21 @@ export function Dashboard() {
       {/* Sidebar */}
       <aside className="flex flex-col gap-1 overflow-y-auto border-r border-hairline bg-canvas px-2.5 py-3.5">
         <div className="mb-3 border border-hairline bg-surface-1 p-3">
-          <div className="text-sm font-semibold tracking-carbon text-ink">{PROJECT.name}</div>
+          <div className="text-sm font-semibold tracking-carbon text-ink">{projectName}</div>
           <div className="mt-1 text-[11px] leading-relaxed text-ink-muted">
             {PROJECT.meta1}
             <br />
             {PROJECT.meta2}
           </div>
           <span className="mt-2 inline-block bg-[#fcf4d6] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#684e00]">
-            {PROJECT.tag}
+            {liveReport ? `READINESS ${readiness}/100 · ${liveReport.materiality_class.toUpperCase()}` : PROJECT.tag}
           </span>
         </div>
 
         <div className="px-2.5 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-ink-subtle">
           Project
         </div>
-        {NAV.map((n) => {
+        {nav.map((n) => {
           const active = view === n.key;
           return (
             <button
@@ -184,10 +251,23 @@ export function Dashboard() {
       {/* Main */}
       <main className="overflow-y-auto bg-canvas px-6 py-5">
         {view === "overview" && (
-          <Overview role={role} readiness={readiness} blockingCount={blockingCount} live={!!liveReport} />
+          <Overview
+            role={role}
+            readiness={readiness}
+            blockingCount={blockingCount}
+            live={!!liveReport}
+            projectName={projectName}
+            activity={activity}
+          />
         )}
         {view === "documents" && (
-          <Documents role={role} roleKey={roleKey} selectedDoc={selectedDoc} onSelect={selectDoc} />
+          <Documents
+            role={role}
+            roleKey={roleKey}
+            docs={docItems}
+            selectedDoc={selectedDoc}
+            onSelect={selectDoc}
+          />
         )}
         {view === "audit" && (
           <Audit
@@ -199,12 +279,12 @@ export function Dashboard() {
             onRun={runAudit}
           />
         )}
-        {view === "issues" && <Issues role={role} onDraft={setDrawerIssue} />}
-        {view === "models" && <Models />}
+        {view === "issues" && <Issues role={role} issues={issueItems} onDraft={setDrawerIssue} />}
+        {view === "models" && <Models report={liveReport} />}
         {view === "intel" && <Intelligence />}
       </main>
 
-      <AiDrawer issueId={drawerIssue} onClose={() => setDrawerIssue(null)} />
+      <AiDrawer issue={activeIssue} draft={activeDraft} onClose={() => setDrawerIssue(null)} />
     </div>
   );
 }

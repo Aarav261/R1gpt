@@ -1,6 +1,15 @@
-import type { AuditReport, Finding } from "@/types/report";
+import type { AuditReport, Finding, ReportDocument } from "@/types/report";
 import { Severity } from "@/types/report";
-import type { AuditState, AuditItem } from "./mock";
+import { DocumentType } from "@/types/documents";
+import type {
+  AuditState,
+  AuditItem,
+  DocRecord,
+  DeltaGroup,
+  IssueRecord,
+  IssueSeverity,
+  ActivityRecord,
+} from "./mock";
 
 export interface AuditProgress {
   stage: "uploading" | "extracted" | "assessed" | "scored";
@@ -124,4 +133,197 @@ export function reportToAuditItems(report: AuditReport): AuditItem[] {
     name: f.title,
     d: [f.clause, f.description].filter(Boolean).join(" — "),
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Live projections — map a real AuditReport into each workspace view's shape.
+// ---------------------------------------------------------------------------
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+const DOC_META: Record<string, { icon: string; label: string }> = {
+  [DocumentType.GPS_BASELINE]: { icon: "GPS", label: "GPS / 5.3.4A baseline" },
+  [DocumentType.FAT_REPORT]: { icon: "FAT", label: "Transformer FAT report" },
+  [DocumentType.OEM_METADATA]: { icon: "OEM", label: "OEM model metadata" },
+  [DocumentType.PSCAD_REPORT]: { icon: "EMT", label: "PSCAD / EMT study" },
+  [DocumentType.CONNECTION_AGREEMENT]: { icon: "CXN", label: "Connection agreement" },
+  [DocumentType.RFI_HISTORY]: { icon: "RFI", label: "Prior RFI history" },
+};
+
+const MODEL_DOC_TYPES = new Set<string>([
+  DocumentType.PSCAD_REPORT,
+  DocumentType.OEM_METADATA,
+]);
+
+/** True for documents the OEM/model-only roles are allowed to see. */
+export function isModelDoc(id: string): boolean {
+  return MODEL_DOC_TYPES.has(id) || ["pscad", "psse"].includes(id);
+}
+
+// Loosely associate a finding's source_document string with an uploaded doc.
+function fileMatches(sourceDoc: string, d: ReportDocument, label: string): boolean {
+  const s = sourceDoc.toLowerCase();
+  const base = d.filename.toLowerCase().replace(/\.[^.]+$/, "");
+  return (
+    s.includes(base) ||
+    s.includes(d.doc_type.replace(/_/g, " ")) ||
+    s.includes(label.toLowerCase())
+  );
+}
+
+function buildDocGroups(
+  label: string,
+  findings: Finding[],
+  failed: boolean
+): DeltaGroup[] {
+  if (failed) {
+    return [
+      {
+        label: "Extraction warning",
+        kind: "del",
+        items: [
+          {
+            clause: label,
+            text: "This document could not be structured — it was excluded from clause assessment. Re-upload a machine-readable version.",
+          },
+        ],
+      },
+    ];
+  }
+  if (findings.length === 0) {
+    return [
+      {
+        label: "No issues",
+        kind: "add",
+        items: [
+          {
+            clause: label,
+            text: "Parsed successfully. No clause-level findings reference this document.",
+          },
+        ],
+      },
+    ];
+  }
+  return [
+    {
+      label: `${findings.length} finding${findings.length === 1 ? "" : "s"}`,
+      kind: "mod",
+      items: findings.map((f) => ({
+        clause: f.clause ?? f.assessor,
+        text: escapeHtml(f.description),
+      })),
+    },
+  ];
+}
+
+/** Project the uploaded documents (+ their findings) into the Documents view. */
+export function reportToDocItems(report: AuditReport): DocRecord[] {
+  const docs = report.documents ?? [];
+  return docs.map((d): DocRecord => {
+    const meta = DOC_META[d.doc_type] ?? { icon: "DOC", label: d.doc_type };
+    const failed = d.schema_backed && !d.extracted;
+    const docFindings = report.findings.filter(
+      (f) => f.source_document && fileMatches(f.source_document, d, meta.label)
+    );
+    return {
+      id: d.doc_type,
+      icon: meta.icon,
+      name: d.filename,
+      type: meta.label,
+      ver: d.schema_backed ? (d.extracted ? "parsed" : "extract failed") : "raw text",
+      changed: failed || docFindings.length > 0,
+      delta: {
+        when: failed
+          ? "Extraction failed — excluded from clause assessment"
+          : `Parsed in this audit · ${docFindings.length} finding${docFindings.length === 1 ? "" : "s"} reference this document`,
+        groups: buildDocGroups(meta.label, docFindings, failed),
+      },
+    };
+  });
+}
+
+function findingSource(assessor: string): "AEMO" | "Transgrid" {
+  return assessor.toLowerCase().includes("nsp") ? "Transgrid" : "AEMO";
+}
+
+function severityToIssueSeverity(sev: Severity): IssueSeverity {
+  if (sev === Severity.DMAT_TRIGGERING || sev === Severity.HIGH) return "blocking";
+  if (sev === Severity.MEDIUM) return "major";
+  return "minor";
+}
+
+/** Project findings into the RFI / issue-tracker rows (predicted, pre-AEMO). */
+export function reportToIssueItems(report: AuditReport): IssueRecord[] {
+  return report.findings.map(
+    (f): IssueRecord => ({
+      id: f.finding_id,
+      src: findingSource(f.assessor),
+      sev: severityToIssueSeverity(f.severity),
+      clause: f.clause ?? "—",
+      title: f.title,
+      body: f.description,
+      status: "open",
+    })
+  );
+}
+
+function buildDraft(f: Finding): string {
+  const cite = f.source_document
+    ? `<span class="ai-src">${f.source_document}</span>`
+    : f.psmg_ref
+      ? `<span class="ai-src">PSMG ${f.psmg_ref}</span>`
+      : `<span class="ai-src">submission documents</span>`;
+  const sev = f.severity.replace(/_/g, " ");
+  return `Predicted ${sev} issue — ${f.title}${f.clause ? ` (${f.clause})` : ""}:
+
+${f.description}
+
+Recommended action: ${f.recommended_action} (estimated effort: ${f.rectification_effort}). Evidence basis: ${cite}.
+
+This is a pre-submission prediction from the R1GPT audit — resolve before lodgement to avoid a TDD round.`;
+}
+
+/** AI-draft text keyed by finding id, for the response copilot drawer. */
+export function reportToDrafts(report: AuditReport): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const f of report.findings) out[f.finding_id] = buildDraft(f);
+  return out;
+}
+
+/** Synthesize a live activity feed describing the most recent audit run. */
+export function reportToActivity(report: AuditReport): ActivityRecord[] {
+  const blocking = report.findings.filter(
+    (f) => f.severity === Severity.HIGH || f.severity === Severity.DMAT_TRIGGERING
+  ).length;
+
+  const entries: ActivityRecord[] = [
+    {
+      who: "You",
+      txt: `ran pre-submission audit on ${report.project_name} — ${report.findings.length} finding${
+        report.findings.length === 1 ? "" : "s"
+      }, ${blocking} blocking`,
+      when: "now",
+      tone: blocking > 0 ? "red" : "green",
+    },
+  ];
+
+  if (report.extraction_warnings.length > 0) {
+    entries.push({
+      who: "R1GPT",
+      txt: `${report.extraction_warnings.length} document(s) failed extraction and were excluded`,
+      when: "now",
+      tone: "amber",
+    });
+  }
+
+  for (const d of report.documents ?? []) {
+    entries.push({ who: "Upload", txt: `added ${d.filename}`, when: "now", tone: "blue" });
+  }
+
+  return entries.slice(0, 6);
 }
