@@ -14,7 +14,7 @@ export function MissingEvidence({ items }: { items: string[] }) {
           key={i}
           className="flex items-start gap-3 rounded-none border border-hairline bg-surface-1 p-3"
         >
-          <span className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full bg-error" />
+          <span className="mt-1.5 inline-block h-2 w-2 shrink-0 bg-error" />
           <div className="flex-1">
             <span className="font-mono text-xs text-ink-subtle">
               {String(i + 1).padStart(2, "0")}
