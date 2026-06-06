@@ -10,16 +10,28 @@
 import { promises as fs } from "fs";
 import path from "path";
 
-const DIR = path.join(process.cwd(), "synthetic", "fixtures");
-const FILES = ["gps_baseline", "fat_report", "oem_metadata"];
+const ROOT = path.join(process.cwd(), "synthetic", "fixtures");
+
+// Each demo package: a directory and the fixture stems it contains.
+const PACKAGES: { dir: string; files: string[] }[] = [
+  // Ironbark Solar Farm — failing submission.
+  { dir: ROOT, files: ["gps_baseline", "fat_report", "oem_metadata"] },
+  // Wattle Creek BESS — fully PSMG-compliant submission.
+  {
+    dir: path.join(ROOT, "passing"),
+    files: ["gps_baseline", "fat_report", "oem_metadata", "pscad_report"],
+  },
+];
 
 async function main() {
-  for (const name of FILES) {
-    const src = path.join(DIR, `${name}.txt`);
-    const dst = path.join(DIR, `${name}.pdf`);
-    const text = await fs.readFile(src, "utf-8");
-    await fs.writeFile(dst, text, "utf-8");
-    console.log(`wrote ${dst}`);
+  for (const pkg of PACKAGES) {
+    for (const name of pkg.files) {
+      const src = path.join(pkg.dir, `${name}.txt`);
+      const dst = path.join(pkg.dir, `${name}.pdf`);
+      const text = await fs.readFile(src, "utf-8");
+      await fs.writeFile(dst, text, "utf-8");
+      console.log(`wrote ${dst}`);
+    }
   }
   console.log("Done. Demo fixtures generated.");
 }
