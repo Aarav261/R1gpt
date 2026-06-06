@@ -4,6 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { DocumentType } from "@/types/documents";
+import type { AuditReport } from "@/types/report";
+import { saveLatestReport } from "@/lib/dashboard/reportState";
 import { UploadZone, DocSlotConfig } from "@/components/upload/UploadZone";
 
 const SLOTS: DocSlotConfig[] = [
@@ -152,15 +154,9 @@ export default function HomePage() {
             );
           }
           if (evt.event === "report_complete") {
-            const report = evt.data as { audit_id: string };
-            try {
-              sessionStorage.setItem(
-                `r1gpt:${report.audit_id}`,
-                JSON.stringify(evt.data)
-              );
-            } catch {
-              /* sessionStorage may be unavailable; server store is fallback */
-            }
+            const report = evt.data as AuditReport;
+            // Persists r1gpt:<id> (report page) AND r1gpt:latest (workspace).
+            saveLatestReport(report);
             router.push(`/audit/${report.audit_id}`);
             return;
           }

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ISSUES, DRAFTS } from "@/lib/dashboard/mock";
+import type { IssueRecord } from "@/lib/dashboard/mock";
 
 interface Props {
-  issueId: string | null;
+  issue: IssueRecord | null;
+  draft: string | null;
   onClose: () => void;
 }
 
@@ -22,8 +23,7 @@ function renderDraft(raw: string): string {
   );
 }
 
-export function AiDrawer({ issueId, onClose }: Props) {
-  const issue = issueId ? ISSUES.find((i) => i.id === issueId) ?? null : null;
+export function AiDrawer({ issue, draft, onClose }: Props) {
   const [typed, setTyped] = useState(false);
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export function AiDrawer({ issueId, onClose }: Props) {
                   <pre
                     className="whitespace-pre-wrap font-sans"
                     dangerouslySetInnerHTML={{
-                      __html: renderDraft(DRAFTS[issue.id] || "Draft unavailable for this item."),
+                      __html: renderDraft(draft || "Draft unavailable for this item."),
                     }}
                   />
                 )}
