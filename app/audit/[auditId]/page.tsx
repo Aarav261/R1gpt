@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AuditReport, Severity } from "@/types/report";
 import { ApprovalMeter } from "@/components/audit/ApprovalMeter";
-import { DifferentiatorCallout } from "@/components/audit/DifferentiatorCallout";
 import { ClauseScorecard } from "@/components/audit/ClauseScorecard";
 import { FindingsList } from "@/components/audit/FindingsList";
 import { MissingEvidence } from "@/components/audit/MissingEvidence";
@@ -182,14 +181,6 @@ export default function AuditReportPage({
               checksPassed={checks.passed}
               checksApplicable={checks.applicable}
               materialityClass={report.materiality_class}
-            />
-          </div>
-          <div className="mt-4">
-            <DifferentiatorCallout
-              findingCount={counts.total}
-              dmatCount={counts.dmat}
-              highCount={counts.high}
-              readinessIndex={report.readiness_index}
             />
           </div>
         </section>
