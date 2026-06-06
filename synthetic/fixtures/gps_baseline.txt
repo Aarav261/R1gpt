@@ -1,0 +1,18 @@
+Generator Performance Standards — Proposed Schedule 5.2 Compliance
+Project: Ironbark Solar Farm 400MW
+Connection Point: 132kV, Transgrid NSW
+GPS Agreed Date: 14 February 2023
+NSP: Transgrid
+Technology: Solar (IBR)
+Capacity: 400 MW
+Clauses addressed: S5.2.5.2, S5.2.5.9, S5.2.8, S5.2.6.1, S5.2.5.15
+Design transformer impedance: 0.120 pu on 400MVA base (positive sequence)
+Zero sequence impedance: not yet determined, to be confirmed at FAT
+Assumed fault level at connection point: 1,350 MVA
+Short circuit ratio: not stated
+Active power recovery post-fault: less than or equal to 100ms
+EMT model: to be provided in PSCAD format
+RMS model: PSS/E format, block diagrams to follow
+Harmonic filter: preliminary design only, final report pending
+Releasable User Guide: not yet prepared
+Note: Block diagrams for RMS model controllers not yet available

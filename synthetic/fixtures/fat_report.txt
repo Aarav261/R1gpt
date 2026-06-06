@@ -1,0 +1,13 @@
+Factory Acceptance Test Report — Main Step-Up Transformer
+Project: Ironbark Solar Farm
+Vendor: ABB Power Grids
+Test Facility: ABB Ludvika, Sweden
+Test Date: 15 March 2024
+Measured positive sequence impedance: 0.138 pu on 400MVA base
+Measured zero sequence impedance: 0.041 pu
+Tap changer positions tested: -5%, 0%, +5%
+Inverter firmware version at time of test: v2.1.0
+Harmonic filter design report: not included in this package
+  (refer to separate filter vendor report, availability TBC)
+Transfer function block diagrams: not provided with this submission
+Releasable User Guide: not provided
