@@ -6,8 +6,6 @@ out/
 *.log
 .DS_Store
 coverage/
-synthetic/fixtures/*.pdf
-synthetic/fixtures/**/*.pdf
 
 # TypeScript build info
 *.tsbuildinfo
