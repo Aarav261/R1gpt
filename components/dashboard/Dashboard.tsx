@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   ROLES,
   PROJECT,
@@ -109,6 +110,9 @@ export function Dashboard() {
               <option value="aemo">AEMO Reviewer</option>
             </select>
           </div>
+          <Link href="/upload" className="cds-btn cds-btn--primary cds-btn--sm">
+            + New audit
+          </Link>
           <div className="relative grid h-8 w-8 place-items-center border border-hairline bg-canvas">
             <span className="text-sm">🔔</span>
             <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 bg-error" />

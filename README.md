@@ -10,6 +10,21 @@ questions, and a rectification plan with effort estimates. Every finding cites
 the exact source document, source field, and the specific section of AEMO's
 **Power System Model Guidelines v3.0 (September 2025)** it maps to.
 
+> **Hardening notes (read before pitching).** This README describes the current
+> build. A judge-lens review flagged several overclaims and fixes that are
+> **recommended but not yet applied to the code**:
+> - [`METHODOLOGY.md`](METHODOLOGY.md) — why the "calibrated approval probability
+>   with confidence bounds" should be relabelled a deterministic **readiness
+>   index** (drop "calibrated", drop the CI, drop the month percentiles).
+> - [`LIMITATIONS.md`](LIMITATIONS.md) — the honest extraction/score/demo
+>   boundaries (extraction is probabilistic; the demo fixtures are synthetic).
+> - [`CITATIONS.md`](CITATIONS.md) — every PSMG/NER reference with a verification
+>   status and the specific citation inconsistencies still in the code.
+> - [`DEMO_SCRIPT.md`](DEMO_SCRIPT.md) — lead with the evidence chain, not the
+>   gauge; Q&A kill-shots and answers.
+> - [`STRESS_TEST.md`](STRESS_TEST.md) — a deterministic-core stress harness and
+>   the real findings (incl. a floating-point threshold-boundary bug).
+
 ## How is this different from ChatGPT?
 
 A general LLM gives you a **conversation**. R1GPT gives you a **structured audit

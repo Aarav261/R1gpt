@@ -23,9 +23,9 @@ export function TimelineEstimate({
 
   return (
     <div>
-      <div className="relative mt-8 mb-10 h-2 rounded-full bg-bg-highlight">
+      <div className="relative mt-8 mb-10 h-2 bg-surface-2">
         <div
-          className="absolute h-2 rounded-full bg-gradient-to-r from-accent-green via-accent-amber to-accent-red"
+          className="absolute h-2 bg-gradient-to-r from-success via-warning to-error"
           style={{ left: pos(p10), right: `${100 - (p90 / max) * 100}%` }}
         />
         {markers.map((mk) => (
@@ -34,18 +34,18 @@ export function TimelineEstimate({
             className="absolute -top-1 flex -translate-x-1/2 flex-col items-center"
             style={{ left: pos(mk.m) }}
           >
-            <div className="h-4 w-1 rounded bg-text-primary" />
-            <div className="mt-1 whitespace-nowrap font-mono text-[11px] text-text-secondary">
+            <div className="h-4 w-1 bg-ink" />
+            <div className="mt-1 whitespace-nowrap font-mono text-[11px] text-ink-muted">
               {mk.label}
             </div>
-            <div className="font-mono text-sm font-semibold text-text-primary">
+            <div className="font-mono text-sm font-semibold text-ink">
               {mk.m}mo
             </div>
           </div>
         ))}
       </div>
 
-      <p className="font-sans text-xs text-text-muted">
+      <p className="font-sans text-xs text-ink-subtle">
         Based on {findingCount} findings including {dmatCount} DMAT-triggering
         items. Audited against PSMG v3.0.
       </p>

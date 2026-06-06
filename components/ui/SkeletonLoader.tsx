@@ -7,7 +7,7 @@ export function SkeletonLoader({
 }) {
   return (
     <div
-      className={`skeleton rounded ${className}`}
+      className={`animate-pulse rounded-none bg-surface-1 ${className}`}
       style={{ height }}
       aria-hidden
     />
