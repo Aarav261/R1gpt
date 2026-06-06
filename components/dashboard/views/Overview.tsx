@@ -1,5 +1,5 @@
 import { ACTIVITY, PIPELINE } from "@/lib/dashboard/mock";
-import type { RoleConfig } from "@/lib/dashboard/mock";
+import type { RoleConfig, ActivityRecord } from "@/lib/dashboard/mock";
 import { Tag, Tile, TileHead, ReadinessMeter, ViewHead, RoleBanner } from "../ui";
 
 interface Props {
@@ -7,15 +7,17 @@ interface Props {
   readiness: number;
   blockingCount: number;
   live: boolean;
+  projectName: string;
+  activity: ActivityRecord[];
 }
 
-export function Overview({ role, readiness, blockingCount, live }: Props) {
+export function Overview({ role, readiness, blockingCount, live, projectName, activity }: Props) {
   const tone = blockingCount > 0 ? "error" : readiness >= 90 ? "success" : "warning";
   return (
     <section>
       <ViewHead
         title="Project Overview"
-        sub="Wattle Creek BESS · Connection approval status & pipeline"
+        sub={`${projectName} · Connection approval status & pipeline`}
         right={<RoleBanner html={`Viewing as <b style="color:#0f62fe">${role.label}</b> — ${role.access}`} />}
       />
 
@@ -104,9 +106,9 @@ export function Overview({ role, readiness, blockingCount, live }: Props) {
         </Tile>
 
         <Tile>
-          <TileHead title="Recent Activity" />
+          <TileHead title="Recent Activity" hint={live ? "live audit" : undefined} />
           <div>
-            {ACTIVITY.map((a, i) => (
+            {(activity.length > 0 ? activity : ACTIVITY).map((a, i) => (
               <div
                 key={i}
                 className="flex items-start gap-3 border-b border-hairline py-2.5 last:border-b-0"
@@ -114,7 +116,9 @@ export function Overview({ role, readiness, blockingCount, live }: Props) {
                 <Tag tone={a.tone}>{a.who}</Tag>
                 <div className="flex-1 text-xs text-ink">
                   {a.txt}
-                  <div className="mt-0.5 text-xs text-ink-subtle">{a.when} ago</div>
+                  <div className="mt-0.5 text-xs text-ink-subtle">
+                    {a.when === "now" ? "just now" : `${a.when} ago`}
+                  </div>
                 </div>
               </div>
             ))}

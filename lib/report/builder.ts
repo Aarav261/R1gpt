@@ -6,7 +6,7 @@ import {
 } from "@/types/documents";
 import { AuditReport, Finding } from "@/types/report";
 import { runAssessors } from "@/lib/assessors/runner";
-import { getGPS } from "@/lib/assessors/helpers";
+import { getGPS, getOEM } from "@/lib/assessors/helpers";
 import {
   CHECKLIST_CEILING,
   computeMateriality,
@@ -105,6 +105,8 @@ export async function buildAuditReport(
     gps?.technology_type ?? null
   );
 
+  const oem = getOEM(docs);
+
   return {
     audit_id: nanoid(),
     project_name,
@@ -120,6 +122,20 @@ export async function buildAuditReport(
     rfi_cycle_risk,
     clause_scorecard: scorecard,
     extraction_warnings: buildExtractionWarnings(docs),
+    documents: docs.map((d) => ({
+      doc_type: d.doc_type,
+      filename: d.filename,
+      schema_backed: SCHEMA_BACKED_DOC_TYPES.has(d.doc_type),
+      extracted: d.extracted != null,
+    })),
+    oem_summary: oem
+      ? {
+          vendor: oem.vendor,
+          model_name: oem.model_name,
+          firmware_version: oem.firmware_version,
+          dmat_baseline_version: oem.dmat_baseline_version,
+        }
+      : null,
     psmg_version: "3.0",
   };
 }
