@@ -40,12 +40,12 @@ export function UploadZone({
 
   return (
     <div
-      className={`flex flex-col rounded-lg border bg-bg-surface p-4 transition-colors ${
+      className={`flex flex-col rounded-none border bg-surface-1 p-4 transition-colors ${
         dragging
-          ? "border-accent-blue bg-accent-blue/5"
+          ? "border-ibm-blue bg-ibm-blue/5"
           : file
-            ? "border-accent-green/50"
-            : "border-border hover:border-border-active"
+            ? "border-success/50"
+            : "border-hairline hover:border-ibm-blue"
       } ${disabled ? "opacity-60" : ""}`}
       onDragOver={(e) => {
         e.preventDefault();
@@ -55,18 +55,18 @@ export function UploadZone({
       onDrop={handleDrop}
     >
       <div className="mb-1 flex items-start justify-between gap-2">
-        <h3 className="font-sans text-sm font-semibold text-text-primary">
+        <h3 className="font-sans text-sm font-semibold text-ink">
           {config.label}
         </h3>
         <DocumentTag required={config.required} />
       </div>
 
-      <p className="mb-1 font-sans text-xs text-text-secondary">
+      <p className="mb-1 font-sans text-xs text-ink-muted">
         {config.description}
       </p>
 
       {config.psmg && (
-        <p className="mb-3 font-mono text-[11px] text-accent-purple">
+        <p className="mb-3 font-mono text-[11px] text-ibm-blue">
           {config.psmg}
         </p>
       )}
@@ -82,15 +82,15 @@ export function UploadZone({
 
       <div className="mt-auto">
         {file ? (
-          <div className="flex items-center justify-between gap-2 rounded border border-accent-green/40 bg-accent-green/10 px-3 py-2">
-            <span className="truncate font-mono text-xs text-accent-green">
+          <div className="flex items-center justify-between gap-2 rounded-none border border-success/40 bg-success/10 px-3 py-2">
+            <span className="truncate font-mono text-xs text-success">
               ✓ {file.name}
             </span>
             <button
               type="button"
               onClick={() => onFile(null)}
               disabled={disabled}
-              className="font-mono text-xs text-text-muted hover:text-accent-red"
+              className="font-sans text-xs text-ink-subtle hover:text-error"
             >
               remove
             </button>
@@ -100,7 +100,7 @@ export function UploadZone({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={disabled}
-            className="w-full rounded border border-dashed border-border px-3 py-2 font-mono text-xs text-text-muted transition-colors hover:border-border-active hover:text-text-secondary"
+            className="w-full rounded-none border border-dashed border-hairline px-3 py-2 font-sans text-xs text-ink-subtle transition-colors hover:border-ibm-blue hover:text-ink-muted"
           >
             Drop file or click to browse
           </button>

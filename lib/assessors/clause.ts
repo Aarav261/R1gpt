@@ -47,7 +47,7 @@ export const CLAUSE_EVIDENCE_MATRIX: Record<string, ClauseSpec> = {
     label: "Short circuit ratio",
     required: [DocumentType.FAT_REPORT, DocumentType.PSCAD_REPORT],
     psmg_ref: "Section 4.2 — Fault level model (IEC 60909:2016)",
-    note: "SCR > 10 may qualify for EMT model exemption per Section 3.4",
+    note: "High SCR (rule of thumb ~>10) may reduce EMT modelling scope subject to AEMO system-strength assessment per Section 3.4 — not an automatic exemption",
   },
   "S5.2.8": {
     label: "Fault ride-through",

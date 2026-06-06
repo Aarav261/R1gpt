@@ -33,14 +33,14 @@ export function FindingsList({ findings }: { findings: Finding[] }) {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-mono text-xs transition-colors ${
+            className={`flex items-center gap-1.5 rounded-none border px-3 py-1.5 font-sans text-xs transition-colors ${
               tab === t.key
-                ? "border-border-active bg-bg-highlight text-text-primary"
-                : "border-border bg-bg-surface text-text-secondary hover:text-text-primary"
+                ? "border-ibm-blue bg-surface-2 text-ink"
+                : "border-hairline bg-surface-1 text-ink-muted hover:text-ink"
             }`}
           >
             {t.label}
-            <span className="rounded bg-bg-primary px-1.5 py-0.5 text-[10px] text-text-muted">
+            <span className="rounded-none bg-canvas px-1.5 py-0.5 text-[10px] text-ink-subtle">
               {counts[t.key] ?? 0}
             </span>
           </button>
@@ -48,7 +48,7 @@ export function FindingsList({ findings }: { findings: Finding[] }) {
       </div>
 
       {visible.length === 0 ? (
-        <p className="rounded-lg border border-border bg-bg-surface p-6 text-center font-sans text-sm text-text-muted">
+        <p className="rounded-none border border-hairline bg-surface-1 p-6 text-center font-sans text-sm text-ink-subtle">
           No findings in this category.
         </p>
       ) : (

@@ -14,27 +14,25 @@ import { TimelineEstimate } from "@/components/audit/TimelineEstimate";
 import { SkeletonReport } from "@/components/ui/SkeletonLoader";
 
 const SECTIONS = [
-  { id: "verdict", label: "Approval verdict" },
+  { id: "verdict", label: "Readiness verdict" },
   { id: "scorecard", label: "Clause scorecard" },
   { id: "findings", label: "Findings" },
   { id: "missing", label: "Missing evidence" },
   { id: "rfis", label: "Predicted RFIs" },
   { id: "rectification", label: "Rectification plan" },
-  { id: "timeline", label: "Timeline" },
+  { id: "timeline", label: "RFI-cycle risk" },
 ];
 
 function SectionHeading({ id, n, title }: { id: string; n: number; title: string }) {
   return (
     <div id={id} className="mb-4 scroll-mt-6">
       <div className="flex items-baseline gap-3">
-        <span className="font-mono text-sm text-text-muted">
+        <span className="font-mono text-sm text-ink-subtle">
           {String(n).padStart(2, "0")}
         </span>
-        <h2 className="font-sans text-xl font-semibold text-text-primary">
-          {title}
-        </h2>
+        <h2 className="font-sans text-xl font-normal text-ink">{title}</h2>
       </div>
-      <div className="mt-2 h-px bg-border" />
+      <div className="mt-2 h-px bg-hairline" />
     </div>
   );
 }
@@ -80,13 +78,22 @@ export default function AuditReportPage({
     };
   }, [report]);
 
+  const checks = useMemo(() => {
+    const c = report?.checks ?? [];
+    const applicable = c.filter((x) => x.applicable);
+    return {
+      applicable: applicable.length,
+      passed: applicable.filter((x) => x.passed).length,
+    };
+  }, [report]);
+
   if (error) {
     return (
       <main className="mx-auto max-w-2xl px-5 py-20 text-center">
-        <p className="font-mono text-sm text-accent-red">{error}</p>
+        <p className="font-mono text-sm text-error">{error}</p>
         <Link
-          href="/"
-          className="mt-4 inline-block font-mono text-sm text-accent-blue hover:underline"
+          href="/upload"
+          className="mt-4 inline-block font-sans text-sm text-ibm-blue hover:underline"
         >
           ← Back to upload
         </Link>
@@ -107,27 +114,25 @@ export default function AuditReportPage({
       {/* Sidebar */}
       <aside className="sticky top-8 hidden h-fit w-[240px] shrink-0 lg:block">
         <Link
-          href="/"
-          className="font-mono text-xs text-text-muted hover:text-text-secondary"
+          href="/upload"
+          className="font-sans text-xs text-ink-subtle hover:text-ink-muted"
         >
           ← New audit
         </Link>
-        <div className="mt-3 font-mono text-lg font-bold text-text-primary">
-          R1GPT
-        </div>
+        <div className="mt-3 font-sans text-lg font-semibold text-ink">R1GPT</div>
         <nav className="mt-4 space-y-1">
           {SECTIONS.map((s) => (
             <a
               key={s.id}
               href={`#${s.id}`}
-              className="block rounded px-3 py-1.5 font-sans text-sm text-text-secondary transition-colors hover:bg-bg-highlight hover:text-text-primary"
+              className="block px-3 py-1.5 font-sans text-sm text-ink-muted transition-colors hover:bg-surface-1 hover:text-ink"
             >
               {s.label}
               {s.id === "findings" && ` (${counts.total})`}
             </a>
           ))}
         </nav>
-        <div className="mt-6 border-t border-border pt-3 font-mono text-[11px] leading-relaxed text-text-muted">
+        <div className="mt-6 border-t border-hairline pt-3 font-mono text-[11px] leading-relaxed text-ink-subtle">
           Audited against PSMG v3.0
           <br />
           Effective 25 September 2025
@@ -138,28 +143,44 @@ export default function AuditReportPage({
       <main className="min-w-0 flex-1 space-y-12">
         <header>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded border border-border bg-bg-surface px-2 py-0.5 font-mono text-[11px] text-accent-purple">
+            <span className="border border-hairline bg-surface-1 px-2 py-0.5 font-mono text-[11px] text-ibm-blue">
               PSMG v3.0
             </span>
-            <span className="font-mono text-xs text-text-muted">
+            <span className="font-mono text-xs text-ink-subtle">
               {report.audit_id}
             </span>
           </div>
-          <h1 className="mt-2 font-sans text-2xl font-bold text-text-primary">
+          <h1 className="mt-2 font-sans text-2xl font-light text-ink">
             {report.project_name}
           </h1>
-          <p className="font-mono text-xs text-text-muted">
+          <p className="font-mono text-xs text-ink-subtle">
             {new Date(report.timestamp).toLocaleString()}
           </p>
         </header>
 
-        {/* 1 — Approval verdict */}
+        {/* Extraction warnings — visible honesty signal */}
+        {report.extraction_warnings.length > 0 && (
+          <div className="border border-warning border-l-2 border-l-warning bg-[#fcf4d6] p-4">
+            <div className="font-sans text-sm font-semibold text-[#684e00]">
+              Incomplete extraction — audit may be partial
+            </div>
+            <ul className="mt-2 list-disc space-y-1 pl-5 font-sans text-xs text-[#684e00]">
+              {report.extraction_warnings.map((w, i) => (
+                <li key={i}>{w}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* 1 — Readiness verdict */}
         <section>
-          <SectionHeading id="verdict" n={1} title="Approval verdict" />
-          <div className="rounded-lg border border-border bg-bg-surface p-6">
+          <SectionHeading id="verdict" n={1} title="Readiness verdict" />
+          <div className="border border-hairline bg-surface-1 p-6">
             <ApprovalMeter
-              probability={report.approval_probability}
-              confidenceInterval={report.confidence_interval}
+              readinessIndex={report.readiness_index}
+              readinessCeiling={report.readiness_ceiling}
+              checksPassed={checks.passed}
+              checksApplicable={checks.applicable}
               materialityClass={report.materiality_class}
             />
           </div>
@@ -168,7 +189,7 @@ export default function AuditReportPage({
               findingCount={counts.total}
               dmatCount={counts.dmat}
               highCount={counts.high}
-              probability={report.approval_probability}
+              readinessIndex={report.readiness_index}
             />
           </div>
         </section>
@@ -203,19 +224,19 @@ export default function AuditReportPage({
           <RectificationPlan actions={report.recommended_actions} />
         </section>
 
-        {/* 7 — Timeline */}
+        {/* 7 — RFI-cycle risk */}
         <section>
-          <SectionHeading id="timeline" n={7} title="Time to approval" />
-          <div className="rounded-lg border border-border bg-bg-surface p-6">
+          <SectionHeading id="timeline" n={7} title="RFI-cycle risk" />
+          <div className="border border-hairline bg-surface-1 p-6">
             <TimelineEstimate
-              estimate={report.time_to_approval_months}
+              risk={report.rfi_cycle_risk}
               findingCount={counts.total}
               dmatCount={counts.dmat}
             />
           </div>
         </section>
 
-        <footer className="border-t border-border pt-4 font-mono text-[11px] text-text-muted">
+        <footer className="border-t border-hairline pt-4 font-mono text-[11px] text-ink-subtle">
           R1GPT · Audited against AEMO Power System Model Guidelines v3.0 ·
           Effective 25 September 2025
         </footer>

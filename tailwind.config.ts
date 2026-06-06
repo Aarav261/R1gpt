@@ -1,39 +1,58 @@
 import type { Config } from "tailwindcss";
 
+// IBM Carbon Design System tokens (see DESIGN.md).
+// Carbon Gray 100 dark theme: near-black canvas, light ink, one assertive
+// IBM Blue accent, flat-square chrome. Structural tokens resolve through CSS
+// custom properties (app/globals.css) so the whole surface flips in one place.
 const config: Config = {
-  content: [
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-  ],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        bg: {
-          primary: "#0a0a0b",
-          surface: "#111113",
-          raised: "#1a1a1f",
-          highlight: "#22222a",
+        canvas: "var(--canvas)",
+        ink: {
+          DEFAULT: "var(--ink)",
+          muted: "var(--ink-muted)",
+          subtle: "var(--ink-subtle)",
         },
-        border: {
-          DEFAULT: "#2a2a35",
-          active: "#4a4a60",
+        surface: {
+          1: "var(--surface-1)",
+          2: "var(--surface-2)",
         },
-        text: {
-          primary: "#e8e8f0",
-          secondary: "#8888a0",
-          muted: "#55556a",
+        hairline: {
+          DEFAULT: "var(--hairline)",
+          strong: "var(--hairline-strong)",
         },
-        accent: {
-          blue: "#4f8ef7",
-          green: "#22c55e",
-          amber: "#f59e0b",
-          red: "#ef4444",
-          purple: "#a78bfa",
+        ibm: {
+          blue: "var(--ibm-blue)",
+          "blue-60": "var(--ibm-blue-60)",
+          "blue-80": "var(--ibm-blue-80)",
+          "blue-hover": "var(--ibm-blue-hover)",
         },
+        inverse: {
+          canvas: "#ffffff",
+          surface: "#f4f4f4",
+          ink: "#161616",
+          "ink-muted": "#525252",
+        },
+        // Carbon semantic palette — Gray 100 brightens these for dark legibility.
+        success: "#42be65",
+        warning: "#f1c21b",
+        error: "#fa4d56",
+        info: "#4589ff",
+      },
+      borderRadius: {
+        // Carbon commits to flat geometry; nothing rounds past 2px.
+        none: "0px",
+        xs: "2px",
+        sm: "4px",
       },
       fontFamily: {
+        sans: ["var(--font-plex-sans)", "Helvetica Neue", "Arial", "sans-serif"],
         mono: ["var(--font-plex-mono)", "ui-monospace", "monospace"],
-        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      letterSpacing: {
+        carbon: "0.16px",
       },
     },
   },

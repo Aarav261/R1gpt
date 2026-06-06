@@ -6,7 +6,8 @@ const IBR_TECH = new Set(["solar", "wind", "BESS", "hybrid"]);
 
 /**
  * Model adequacy assessor — grounded entirely in PSMG Section 4.3 (EMT/RMS
- * model requirements) and Section 3.4 (SCR > 10 exemption threshold).
+ * model requirements) and Section 3.4 (high-SCR system-strength considerations
+ * that may reduce — not automatically remove — EMT modelling scope).
  */
 export function runModelAdequacy(docs: UploadedDocument[]): Finding[] {
   const findings: Finding[] = [];
@@ -65,16 +66,16 @@ export function runModelAdequacy(docs: UploadedDocument[]): Finding[] {
       finding_id: "MADQ-003",
       assessor: "model_adequacy",
       clause: "S5.2.5.15",
-      psmg_ref: "Section 3.4 — Exemptions (SCR > 10 threshold)",
-      title: "Short circuit ratio not stated — exemption eligibility unclear",
+      psmg_ref: "Section 3.4 — System strength / EMT modelling scope",
+      title: "Short circuit ratio not stated — EMT modelling scope unclear",
       description:
-        "PSMG Section 3.4 exempts plant with SCR > 10 from EMT model requirements. Without SCR, this exemption cannot be assessed.",
+        "PSMG Section 4.3 requires EMT models for IBR where system strength is a concern. A high SCR (rule of thumb ~>10) may reduce EMT modelling scope subject to AEMO's system-strength assessment under Section 3.4 — it is not an automatic exemption at a single hard threshold. Without the SCR, this cannot be assessed.",
       severity: Severity.MEDIUM,
       evidence_present: false,
       source_document: "gps_baseline",
       source_field: "scr",
       recommended_action:
-        "State the short circuit ratio at the connection point so EMT exemption eligibility under PSMG Section 3.4 can be assessed.",
+        "State the short circuit ratio at the connection point so EMT modelling scope under PSMG Sections 4.3 / 3.4 can be assessed.",
       rectification_effort: "days",
     });
   }
