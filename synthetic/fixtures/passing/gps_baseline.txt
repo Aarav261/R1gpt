@@ -1,0 +1,19 @@
+Generator Performance Standards — Proposed Schedule 5.2 Compliance
+Project: Wattle Creek BESS 200MW
+Connection Point: 220kV, ElectraNet SA
+GPS Agreed Date: 15 January 2026
+NSP: ElectraNet
+Technology: BESS (IBR, grid-forming)
+Capacity: 200 MW
+Clauses addressed: S5.2.5.2, S5.2.5.9, S5.2.5.11, S5.2.5.13, S5.2.5.14, S5.2.5.15, S5.2.8
+Design transformer impedance: 0.120 pu on 200MVA base (positive sequence)
+Zero sequence impedance: 0.038 pu (confirmed)
+Assumed fault level at connection point: 2,400 MVA (to IEC 60909:2016)
+Short circuit ratio: 15.2
+Active power recovery post-fault: less than or equal to 80ms
+EMT model: provided in PSCAD/EMTDC format (Appendix A)
+RMS model: PSS/E format provided in full
+Transfer function block diagrams: included for all functional controllers (Appendix C)
+Harmonic filter design: final report included with frequency-dependent Norton equivalents (Appendix B)
+Releasable User Guide: prepared and provided (Appendix D)
+Note: All models complete; no outstanding items at submission.
