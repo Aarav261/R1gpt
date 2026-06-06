@@ -17,22 +17,21 @@ The honest boundary runs straight through the product:
 - **Safety net** — every AI response is validated against a strict Zod schema
   (`lib/extraction/schemas.ts`). On failure the document's `extracted` model is
   `null` and it is excluded from clause assessment.
-  - **Current gap:** the failure is logged server-side (`console.error`) but is
-    **not surfaced in the report or UI**. A user can get a silently incomplete
-    audit. *Recommended fix:* add an `extraction_warnings: string[]` field to
-    `AuditReport`, populate it in `lib/report/builder.ts` for any schema-backed
-    document whose extraction returned `null`, and render it as a banner. This
-    turns the safety net from an invisible log line into a visible honesty
-    signal.
+  - **Closed:** extraction failures are now surfaced. `AuditReport` carries an
+    `extraction_warnings: string[]` field, populated in `lib/report/builder.ts`
+    for any schema-backed document whose extraction returned `null`, and rendered
+    as a warning banner at the top of the report page. The Zod safety net is now
+    a visible honesty signal, not just a server log line.
 - **Assessment + scoring** (`lib/assessors/`, `lib/scoring/`) — pure functions.
   Same `UploadedDocument[]` in → same findings and score out, every time.
 
 ## 2. The score is not a forecast
 
-See `METHODOLOGY.md`. The current "approval probability + confidence interval"
-is fabricated precision; it should be relabelled a deterministic readiness index
-and the CI dropped. Until that lands, do **not** present the percentage as a
-calibrated probability in any pitch.
+See `METHODOLOGY.md`. The score is now a deterministic **readiness index
+(0–100)** — the fabricated "approval probability + confidence interval" has been
+removed from the code. It is still **not** a forecast: it ranks what to fix
+first, it does not predict AEMO's decision. Do not present it as a calibrated
+probability in any pitch.
 
 ## 3. The demo is synthetic and, today, circular
 
@@ -53,9 +52,10 @@ than a flawless rigged run. See `STRESS_TEST.md`.
 The entire moat is "we cite the exact section AEMO would." That moat is only as
 strong as the weakest reference. The PSMG/NER section numbers in the code were
 authored from working knowledge and have **not** been line-checked against the
-controlled PSMG v3.0 PDF. See `CITATIONS.md` for the register and the specific
-inconsistencies to fix before any pitch (notably the DELTA-001 §6.3/§6.4
-mismatch, the §6.2.1 "10% tolerance" label, and the SCR > 10 "hard exemption").
+controlled PSMG v3.0 PDF. The specific internal inconsistencies are now fixed
+(the DELTA-001 §6.3/§6.4 mismatch, the §6.2.1 "10% tolerance" label, and the
+SCR > 10 "hard exemption" — see `CITATIONS.md`). The remaining `CONFIRM` rows
+still need a line-check against the controlled PDF before any pitch.
 
 ## 5. No calibration, no liability model, no AEMO endorsement
 

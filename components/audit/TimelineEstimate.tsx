@@ -1,53 +1,78 @@
-import { TimeToApproval } from "@/types/report";
+import { RfiCycleRisk, RfiCycleRiskBand } from "@/types/report";
 
 interface TimelineEstimateProps {
-  estimate: TimeToApproval;
+  risk: RfiCycleRisk;
   findingCount: number;
   dmatCount: number;
 }
 
+const BANDS: RfiCycleRiskBand[] = ["minimal", "elevated", "high", "severe"];
+
+const BAND_STYLE: Record<
+  RfiCycleRiskBand,
+  { label: string; dot: string; cls: string }
+> = {
+  minimal: {
+    label: "MINIMAL",
+    dot: "bg-success",
+    cls: "text-[#0e6027] border-success bg-[#defbe6]",
+  },
+  elevated: {
+    label: "ELEVATED",
+    dot: "bg-ibm-blue",
+    cls: "text-[#002d9c] border-ibm-blue bg-[#d0e2ff]",
+  },
+  high: {
+    label: "HIGH",
+    dot: "bg-warning",
+    cls: "text-[#684e00] border-warning bg-[#fcf4d6]",
+  },
+  severe: {
+    label: "SEVERE",
+    dot: "bg-error",
+    cls: "text-[#a2191f] border-error bg-[#fff1f1]",
+  },
+};
+
 export function TimelineEstimate({
-  estimate,
+  risk,
   findingCount,
   dmatCount,
 }: TimelineEstimateProps) {
-  const { p10, p50, p90 } = estimate;
-  const max = Math.max(p90, 24);
-  const pos = (m: number) => `${(m / max) * 100}%`;
-
-  const markers: { key: keyof TimeToApproval; label: string; m: number }[] = [
-    { key: "p10", label: "P10", m: p10 },
-    { key: "p50", label: "P50", m: p50 },
-    { key: "p90", label: "P90", m: p90 },
-  ];
+  const activeIndex = BANDS.indexOf(risk.band);
 
   return (
     <div>
-      <div className="relative mt-8 mb-10 h-2 bg-surface-2">
-        <div
-          className="absolute h-2 bg-gradient-to-r from-success via-warning to-error"
-          style={{ left: pos(p10), right: `${100 - (p90 / max) * 100}%` }}
-        />
-        {markers.map((mk) => (
-          <div
-            key={mk.key}
-            className="absolute -top-1 flex -translate-x-1/2 flex-col items-center"
-            style={{ left: pos(mk.m) }}
-          >
-            <div className="h-4 w-1 bg-ink" />
-            <div className="mt-1 whitespace-nowrap font-mono text-[11px] text-ink-muted">
-              {mk.label}
+      {/* Band scale */}
+      <div className="mt-2 flex gap-1">
+        {BANDS.map((b, i) => {
+          const style = BAND_STYLE[b];
+          const active = i === activeIndex;
+          return (
+            <div
+              key={b}
+              className={`flex-1 border px-2 py-2 text-center transition-opacity ${
+                active ? style.cls : "border-hairline bg-surface-1 opacity-40"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1.5">
+                <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
+                <span className="font-mono text-[11px] font-semibold">
+                  {style.label}
+                </span>
+              </div>
             </div>
-            <div className="font-mono text-sm font-semibold text-ink">
-              {mk.m}mo
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <p className="font-sans text-xs text-ink-subtle">
+      <p className="mt-4 font-sans text-sm text-ink-muted">{risk.rationale}</p>
+
+      <p className="mt-2 font-sans text-xs text-ink-subtle">
         Based on {findingCount} findings including {dmatCount} DMAT-triggering
-        items. Audited against PSMG v3.0.
+        items. This is a qualitative RFI-cycle risk band, not a calendar
+        forecast — R1GPT does not predict elapsed time to approval. Audited
+        against PSMG v3.0.
       </p>
     </div>
   );

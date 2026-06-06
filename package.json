@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "gen:fixtures": "tsx synthetic/generate.ts"
+    "gen:fixtures": "tsx synthetic/generate.ts",
+    "stress": "tsx synthetic/stress.ts"
   },
   "dependencies": {
     "next": "14.2.5",

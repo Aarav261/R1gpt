@@ -1,12 +1,14 @@
 interface ApprovalMeterProps {
-  probability: number; // 0..1
-  confidenceInterval: [number, number];
+  readinessIndex: number; // 0..ceiling
+  readinessCeiling: number; // max the checklist can award (<100)
+  checksPassed: number;
+  checksApplicable: number;
   materialityClass: "low" | "medium" | "high" | "dmat_triggering";
 }
 
-function colorFor(p: number): string {
-  if (p < 0.4) return "var(--error)";
-  if (p < 0.65) return "var(--warning)";
+function colorFor(index: number): string {
+  if (index < 40) return "var(--error)";
+  if (index < 65) return "var(--warning)";
   return "var(--success)";
 }
 
@@ -37,24 +39,23 @@ const MATERIALITY_LABEL: Record<
 };
 
 export function ApprovalMeter({
-  probability,
-  confidenceInterval,
+  readinessIndex,
+  readinessCeiling,
+  checksPassed,
+  checksApplicable,
   materialityClass,
 }: ApprovalMeterProps) {
-  const pct = Math.round(probability * 100);
-  const color = colorFor(probability);
+  const index = Math.round(readinessIndex);
+  const frac = Math.max(0, Math.min(1, index / 100));
+  const color = colorFor(index);
 
   // Semi-circular gauge geometry.
   const R = 90;
   const CX = 110;
   const CY = 110;
   const circumference = Math.PI * R; // half circle
-  const dash = circumference * probability;
+  const dash = circumference * frac;
   const mat = MATERIALITY_LABEL[materialityClass];
-
-  const lo = Math.round(confidenceInterval[0] * 100);
-  const hi = Math.round(confidenceInterval[1] * 100);
-  const spread = Math.round((hi - lo) / 2);
 
   return (
     <div className="flex flex-col items-center">
@@ -83,7 +84,7 @@ export function ApprovalMeter({
           fontWeight={600}
           fill="var(--ink)"
         >
-          {pct}%
+          {index}
         </text>
         <text
           x={CX}
@@ -93,15 +94,19 @@ export function ApprovalMeter({
           fontSize={11}
           fill="var(--ink-muted)"
         >
-          approval probability
+          readiness index / 100
         </text>
       </svg>
 
       <div className="mt-1 font-mono text-sm text-ink-muted">
-        {pct}% ± {spread}%{" "}
-        <span className="text-ink-subtle">
-          (CI {lo}–{hi}%)
-        </span>
+        {checksPassed} of {checksApplicable} checks passed
+      </div>
+
+      <div className="mt-2 max-w-[280px] text-center font-sans text-[11px] leading-relaxed text-ink-subtle">
+        Severity-weighted readiness ranking — illustrative, not a forecast of
+        AEMO&apos;s decision. Caps at {readinessCeiling}: passing every automated
+        check is not a completeness guarantee, and the index saturates at 0 once
+        findings stack up — the findings list is the real signal.
       </div>
 
       <div className={`mt-4 border px-3 py-2 text-center ${mat.cls}`}>

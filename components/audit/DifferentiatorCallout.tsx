@@ -2,7 +2,7 @@ interface DifferentiatorCalloutProps {
   findingCount: number;
   dmatCount: number;
   highCount: number;
-  probability: number; // 0..1
+  readinessIndex: number; // 0..100
 }
 
 /**
@@ -14,9 +14,9 @@ export function DifferentiatorCallout({
   findingCount,
   dmatCount,
   highCount,
-  probability,
+  readinessIndex,
 }: DifferentiatorCalloutProps) {
-  const pct = Math.round(probability * 100);
+  const index = Math.round(readinessIndex);
   return (
     <div className="border border-hairline border-l-2 border-l-ibm-blue bg-surface-1 p-4">
       <div className="mb-2 flex items-center gap-2">
@@ -34,9 +34,9 @@ export function DifferentiatorCallout({
         <span className="font-mono text-warning">{highCount}</span>{" "}
         high-severity issues — each traceable to a specific document field and
         PSMG section. The{" "}
-        <span className="font-mono text-ink">{pct}%</span> approval
-        probability reflects a severity-weighted penalty across all findings,
-        not a sentiment score.
+        <span className="font-mono text-ink">{index}/100</span> readiness index
+        is a severity-weighted ranking of what to fix first, not a probability
+        of approval and not a sentiment score.
       </p>
     </div>
   );

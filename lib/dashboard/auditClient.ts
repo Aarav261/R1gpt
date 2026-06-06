@@ -79,7 +79,7 @@ export async function runDemoAudit(
         case "scoring_complete":
           onProgress?.({
             stage: "scored",
-            detail: `${Math.round((msg.data.probability ?? 0) * 100)}% approval probability`,
+            detail: `readiness index ${Math.round(msg.data.readiness ?? 0)}/100`,
           });
           break;
         case "report_complete":
