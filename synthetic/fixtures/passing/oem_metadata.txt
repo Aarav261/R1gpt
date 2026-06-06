@@ -1,0 +1,10 @@
+OEM Equipment Specification Sheet
+Vendor: Siemens Energy
+Model: SGB-3000 Grid-Forming Battery Inverter
+Current firmware version: v3.2.0
+Firmware version used for DMAT baseline studies: v3.2.0
+EMT model tool: PSCAD/EMTDC
+RMS model tool: PSS/E
+Known limitations: none reported.
+  Firmware v3.2.0 matches the DMAT baseline exactly; no control system
+  changes since DMAT. No re-validation required under PSMG Section 4.8.

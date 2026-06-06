@@ -1,0 +1,15 @@
+Factory Acceptance Test Report — Main Step-Up Transformer
+Project: Wattle Creek BESS 200MW
+Vendor: Siemens Energy
+Test Facility: Siemens Nuremberg, Germany
+Test Date: 12 March 2026
+Measured positive sequence impedance: 0.121 pu on 200MVA base
+Measured zero sequence impedance: 0.039 pu
+Tap changer positions tested: -5%, -2.5%, 0%, +2.5%, +5%
+Inverter firmware version at time of test: v3.2.0
+Harmonic filter design report: included — frequency-dependent Norton
+  equivalents and harmonic current injection profiles provided per loading level
+Transfer function block diagrams: provided (Appendix B — all functional
+  controllers and plant shown in Laplacian form, no black-box blocks)
+Releasable User Guide: provided
+Note: As-built impedance within 1% of agreed GPS design value.

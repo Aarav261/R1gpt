@@ -56,14 +56,22 @@ response.
 
 ## Demo
 
-Click **"Load demo documents"** on the upload page. This loads the bundled
-synthetic *Ironbark Solar Farm 400MW* package (a realistic IBR solar project
-that fails the audit instructively, exercising all six assessors) and runs a
-full audit end to end. Expected findings include a DMAT-triggering transformer
-impedance delta (PSMG §6.3/§6.4), a major firmware bump since the DMAT baseline
-(PSMG §4.8), absent harmonic filter design and block diagrams (PSMG §4.6.1,
-§5.2.2), a stale GPS baseline (PSMG §4.8), and unconfirmed EMT model / unstated
-SCR (PSMG §4.3, §3.4).
+The upload page offers two bundled synthetic packages:
+
+- **"Load failing demo"** — *Ironbark Solar Farm 400MW*, a realistic IBR solar
+  project that fails the audit instructively, exercising all six assessors.
+  Expected findings include a DMAT-triggering transformer impedance delta
+  (PSMG §6.3/§6.4), a major firmware bump since the DMAT baseline (PSMG §4.8),
+  absent harmonic filter design and block diagrams (PSMG §4.6.1, §5.2.2), a
+  stale GPS baseline (PSMG §4.8), and unstated SCR (PSMG §3.4). Result: ~5%
+  approval, `dmat_triggering` materiality.
+- **"Load passing demo"** — *Wattle Creek BESS 200MW*, a fully PSMG-compliant
+  grid-forming BESS submission (GPS + FAT + OEM + PSCAD). As-built impedance
+  within 1% of design, firmware matching the DMAT baseline, harmonic filter
+  design and block diagrams provided, RUG provided, SCR 15.2, recent GPS.
+  Result: **0 findings, 95% approval, all seven clauses PASS**.
+
+Pick one, then click **"Run Audit"** to run the full pipeline end to end.
 
 To regenerate the demo `.pdf` fixtures from their `.txt` sources:
 

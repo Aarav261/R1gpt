@@ -1,0 +1,15 @@
+PSCAD / EMT Stability Study Report
+Project: Wattle Creek BESS 200MW
+Tool: PSCAD/EMTDC v5.0.2
+Model type: Electromagnetic transient (EMT), full-detail grid-forming inverter
+Connection point SCR: 15.2 (exceeds Section 3.4 exemption threshold of 10)
+Studies performed:
+  - Fault ride-through (S5.2.8) — all fault types, PASS
+  - Voltage and reactive power control (S5.2.5.13) — PASS
+  - Active power control (S5.2.5.14) — PASS
+  - Frequency control (S5.2.5.11) — PASS
+  - Short circuit ratio verification (S5.2.5.15) — PASS
+  - Quality of supply / harmonics (S5.2.5.2) — PASS
+Model validation: simulated responses within 5% of benchmark for 95% of
+  samples within the transient window (PSMG Section 6.2.1 satisfied).
+Result: All applicable performance standards demonstrated. No exceptions.
