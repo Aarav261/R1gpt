@@ -14,13 +14,13 @@ import { TimelineEstimate } from "@/components/audit/TimelineEstimate";
 import { SkeletonReport } from "@/components/ui/SkeletonLoader";
 
 const SECTIONS = [
-  { id: "verdict", label: "Approval verdict" },
+  { id: "verdict", label: "Readiness verdict" },
   { id: "scorecard", label: "Clause scorecard" },
   { id: "findings", label: "Findings" },
   { id: "missing", label: "Missing evidence" },
   { id: "rfis", label: "Predicted RFIs" },
   { id: "rectification", label: "Rectification plan" },
-  { id: "timeline", label: "Timeline" },
+  { id: "timeline", label: "RFI-cycle risk" },
 ];
 
 function SectionHeading({ id, n, title }: { id: string; n: number; title: string }) {
@@ -75,6 +75,15 @@ export default function AuditReportPage({
       total: f.length,
       dmat: f.filter((x) => x.severity === Severity.DMAT_TRIGGERING).length,
       high: f.filter((x) => x.severity === Severity.HIGH).length,
+    };
+  }, [report]);
+
+  const checks = useMemo(() => {
+    const c = report?.checks ?? [];
+    const applicable = c.filter((x) => x.applicable);
+    return {
+      applicable: applicable.length,
+      passed: applicable.filter((x) => x.passed).length,
     };
   }, [report]);
 
@@ -149,13 +158,29 @@ export default function AuditReportPage({
           </p>
         </header>
 
-        {/* 1 — Approval verdict */}
+        {/* Extraction warnings — visible honesty signal */}
+        {report.extraction_warnings.length > 0 && (
+          <div className="border border-warning border-l-2 border-l-warning bg-[#fcf4d6] p-4">
+            <div className="font-sans text-sm font-semibold text-[#684e00]">
+              Incomplete extraction — audit may be partial
+            </div>
+            <ul className="mt-2 list-disc space-y-1 pl-5 font-sans text-xs text-[#684e00]">
+              {report.extraction_warnings.map((w, i) => (
+                <li key={i}>{w}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* 1 — Readiness verdict */}
         <section>
-          <SectionHeading id="verdict" n={1} title="Approval verdict" />
+          <SectionHeading id="verdict" n={1} title="Readiness verdict" />
           <div className="border border-hairline bg-surface-1 p-6">
             <ApprovalMeter
-              probability={report.approval_probability}
-              confidenceInterval={report.confidence_interval}
+              readinessIndex={report.readiness_index}
+              readinessCeiling={report.readiness_ceiling}
+              checksPassed={checks.passed}
+              checksApplicable={checks.applicable}
               materialityClass={report.materiality_class}
             />
           </div>
@@ -164,7 +189,7 @@ export default function AuditReportPage({
               findingCount={counts.total}
               dmatCount={counts.dmat}
               highCount={counts.high}
-              probability={report.approval_probability}
+              readinessIndex={report.readiness_index}
             />
           </div>
         </section>
@@ -199,12 +224,12 @@ export default function AuditReportPage({
           <RectificationPlan actions={report.recommended_actions} />
         </section>
 
-        {/* 7 — Timeline */}
+        {/* 7 — RFI-cycle risk */}
         <section>
-          <SectionHeading id="timeline" n={7} title="Time to approval" />
+          <SectionHeading id="timeline" n={7} title="RFI-cycle risk" />
           <div className="border border-hairline bg-surface-1 p-6">
             <TimelineEstimate
-              estimate={report.time_to_approval_months}
+              risk={report.rfi_cycle_risk}
               findingCount={counts.total}
               dmatCount={counts.dmat}
             />

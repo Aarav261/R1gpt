@@ -1,43 +1,45 @@
 import type { Config } from "tailwindcss";
 
 // IBM Carbon Design System tokens (see DESIGN.md).
-// White canvas, charcoal ink, one assertive IBM Blue accent, flat-square chrome.
+// Carbon Gray 100 dark theme: near-black canvas, light ink, one assertive
+// IBM Blue accent, flat-square chrome. Structural tokens resolve through CSS
+// custom properties (app/globals.css) so the whole surface flips in one place.
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        canvas: "#ffffff",
+        canvas: "var(--canvas)",
         ink: {
-          DEFAULT: "#161616",
-          muted: "#525252",
-          subtle: "#8c8c8c",
+          DEFAULT: "var(--ink)",
+          muted: "var(--ink-muted)",
+          subtle: "var(--ink-subtle)",
         },
         surface: {
-          1: "#f4f4f4",
-          2: "#e0e0e0",
+          1: "var(--surface-1)",
+          2: "var(--surface-2)",
         },
         hairline: {
-          DEFAULT: "#e0e0e0",
-          strong: "#161616",
+          DEFAULT: "var(--hairline)",
+          strong: "var(--hairline-strong)",
         },
         ibm: {
-          blue: "#0f62fe",
-          "blue-60": "#0043ce",
-          "blue-80": "#002d9c",
-          "blue-hover": "#0050e6",
+          blue: "var(--ibm-blue)",
+          "blue-60": "var(--ibm-blue-60)",
+          "blue-80": "var(--ibm-blue-80)",
+          "blue-hover": "var(--ibm-blue-hover)",
         },
         inverse: {
-          canvas: "#161616",
-          surface: "#262626",
-          ink: "#ffffff",
-          "ink-muted": "#c6c6c6",
+          canvas: "#ffffff",
+          surface: "#f4f4f4",
+          ink: "#161616",
+          "ink-muted": "#525252",
         },
-        // Carbon semantic palette — the only chroma beyond IBM Blue.
-        success: "#24a148",
+        // Carbon semantic palette — Gray 100 brightens these for dark legibility.
+        success: "#42be65",
         warning: "#f1c21b",
-        error: "#da1e28",
-        info: "#0f62fe",
+        error: "#fa4d56",
+        info: "#4589ff",
       },
       borderRadius: {
         // Carbon commits to flat geometry; nothing rounds past 2px.

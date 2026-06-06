@@ -1,39 +1,53 @@
-import { Finding, Severity, TimeToApproval } from "@/types/report";
+import { Finding, RfiCycleRisk, Severity } from "@/types/report";
 
-export const SEVERITY_PENALTY: Record<Severity, number> = {
-  [Severity.LOW]: 0.04,
-  [Severity.MEDIUM]: 0.12,
-  [Severity.HIGH]: 0.25,
-  [Severity.DMAT_TRIGGERING]: 0.45,
+/**
+ * Severity weights for the readiness index. These are R1GPT triage weights —
+ * an editable rubric, not a calibrated probability. They are deliberately
+ * transparent (plain subtraction) so a reviewer can read the arithmetic.
+ */
+export const SEVERITY_WEIGHT: Record<Severity, number> = {
+  [Severity.LOW]: 4,
+  [Severity.MEDIUM]: 12,
+  [Severity.HIGH]: 25,
+  [Severity.DMAT_TRIGGERING]: 45,
 };
 
-function sigmoidSqueeze(raw: number): number {
-  return 1 / (1 + Math.exp(-6 * (raw - 0.5)));
-}
+/**
+ * The highest readiness the automated checklist can award. It is deliberately
+ * below 100: passing every R1GPT check is "nothing in our finite checklist
+ * fired", which is NOT proof of completeness — a chartered engineer must still
+ * review. The reserved headroom (100 − ceiling) represents that un-automatable
+ * judgement, so R1GPT never claims a perfect score by construction.
+ */
+export const CHECKLIST_CEILING = 95;
 
-/** Severity-weighted approval probability in [0, 1], rounded to 2 dp. */
-export function computeApprovalProbability(findings: Finding[]): number {
-  const totalPenalty = findings.reduce(
-    (sum, f) => sum + SEVERITY_PENALTY[f.severity],
+/**
+ * Deterministic readiness index in [0, CHECKLIST_CEILING].
+ *
+ * readiness = clamp(0 .. ceiling, ceiling − Σ severity_weight)
+ *
+ * This is a severity-weighted ranking of what to fix first — NOT a calibrated
+ * probability of AEMO approval. There is no calibration dataset (AEMO does not
+ * publish clause-level R1 outcomes), so the index makes no probabilistic claim.
+ *
+ * Note the index SATURATES at both ends: a submission with many severe findings
+ * floors at 0 and stops discriminating. Among failing submissions the signal
+ * lives in the findings list, materiality and RFI-cycle band — not the index.
+ */
+export function computeReadinessIndex(findings: Finding[]): number {
+  const totalWeight = findings.reduce(
+    (sum, f) => sum + SEVERITY_WEIGHT[f.severity],
     0
   );
-  const raw = Math.max(0, 1 - totalPenalty);
-  const squeezed = sigmoidSqueeze(raw);
-  return Math.round(squeezed * 100) / 100;
+  return Math.max(0, CHECKLIST_CEILING - totalWeight);
 }
 
-export function computeConfidenceInterval(
-  probability: number,
-  findingCount: number
-): [number, number] {
-  const spread = Math.max(0.05, 0.15 - findingCount * 0.01);
-  return [
-    Math.max(0.01, Math.round((probability - spread) * 100) / 100),
-    Math.min(0.99, Math.round((probability + spread) * 100) / 100),
-  ];
-}
-
-export function computeTimeToApproval(findings: Finding[]): TimeToApproval {
+/**
+ * Qualitative RFI-cycle risk band. Replaces the fabricated P10/P50/P90 month
+ * percentiles (which had no empirical anchor). The bands describe relative
+ * exposure to additional RFI cycles, not a forecast of elapsed time.
+ */
+export function computeRfiCycleRisk(findings: Finding[]): RfiCycleRisk {
   const hasDMAT = findings.some(
     (f) => f.severity === Severity.DMAT_TRIGGERING
   );
@@ -41,10 +55,29 @@ export function computeTimeToApproval(findings: Finding[]): TimeToApproval {
     (f) => f.severity === Severity.HIGH
   ).length;
 
-  if (hasDMAT) return { p10: 8, p50: 14, p90: 24 };
-  if (highCount >= 3) return { p10: 5, p50: 10, p90: 18 };
-  if (highCount >= 1) return { p10: 3, p50: 7, p90: 13 };
-  return { p10: 1, p50: 3, p90: 6 };
+  if (hasDMAT)
+    return {
+      band: "severe",
+      rationale:
+        "DMAT-triggering findings historically add multiple RFI cycles before model acceptance.",
+    };
+  if (highCount >= 3)
+    return {
+      band: "high",
+      rationale:
+        "Several high-severity evidence gaps are likely to draw clarifying RFIs across more than one cycle.",
+    };
+  if (highCount >= 1)
+    return {
+      band: "elevated",
+      rationale:
+        "At least one high-severity gap is likely to draw an RFI before acceptance.",
+    };
+  return {
+    band: "minimal",
+    rationale:
+      "No high-severity or DMAT-triggering findings — RFI exposure is limited to minor clarifications.",
+  };
 }
 
 export function computeMateriality(

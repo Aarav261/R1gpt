@@ -53,9 +53,9 @@ export function Dashboard() {
   );
   const blockingCount = auditItems.filter((a) => a.s === "fail").length;
 
-  // Readiness: live approval probability when available, else mockup baseline.
+  // Readiness: live readiness index when available, else mockup baseline.
   const readiness = liveReport
-    ? Math.round(liveReport.approval_probability * 100)
+    ? Math.round(liveReport.readiness_index)
     : 72;
 
   function selectDoc(id: string) {

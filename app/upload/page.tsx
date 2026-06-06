@@ -60,7 +60,7 @@ const REQUIRED: DocumentType[] = [
 const STEPS = [
   "Extracting document data...",
   "Running PSMG clause assessors...",
-  "Computing approval probability...",
+  "Computing readiness index...",
   "Generating AEMO RFI predictions...",
 ];
 
@@ -196,19 +196,6 @@ export default function HomePage() {
         </p>
       </header>
 
-      {/* Differentiator banner */}
-      <section className="mb-8 rounded-none border-l-2 border-ibm-blue bg-surface-1 p-5">
-        <h2 className="font-sans text-base font-semibold text-ink">
-          Not a chatbot. A structured audit engine.
-        </h2>
-        <p className="mt-2 font-sans text-sm leading-relaxed text-ink-muted">
-          Upload your R1 submission package and receive a clause-by-clause
-          verdict grounded in AEMO&apos;s Power System Model Guidelines v3.0.
-          Every finding cites the specific PSMG section AEMO would reference in
-          an RFI letter.
-        </p>
-      </section>
-
       {/* Upload grid */}
       <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
         {SLOTS.map((slot) => (
@@ -243,7 +230,7 @@ export default function HomePage() {
           disabled={!canRun}
           className={`rounded-none px-6 py-3 font-sans text-sm font-semibold transition-colors ${
             canRun
-              ? "bg-ibm-blue text-canvas hover:bg-ibm-blue/90"
+              ? "bg-ibm-blue text-white hover:bg-ibm-blue/90"
               : "cursor-not-allowed bg-surface-2 text-ink-subtle"
           }`}
         >

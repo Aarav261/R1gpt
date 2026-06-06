@@ -54,7 +54,7 @@ export function Audit({ items, live, running, progress, error, onRun }: Props) {
           {running && progress
             ? `${progress.stage} — ${progress.detail}`
             : live
-              ? `Live report · ${live.project_name} · ${Math.round(live.approval_probability * 100)}% approval · materiality ${live.materiality_class}`
+              ? `Live report · ${live.project_name} · readiness ${Math.round(live.readiness_index)}/100 · materiality ${live.materiality_class}`
               : "Runs the real extraction → assessment → scoring pipeline on bundled fixtures (needs OPENAI_API_KEY)."}
         </span>
       </div>

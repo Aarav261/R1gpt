@@ -7,10 +7,11 @@ cannot be fully answered without running on real documents (see `LIMITATIONS.md`
 **deterministic** layer — Zod validation + assessors + scoring — is robust to
 adversarial and malformed input, degrades gracefully, and is reproducible.
 
-This document specifies a stress harness for that layer, reports the findings
-from an actual run, and provides drop-in source (Appendix A). The harness needs
-**no OpenAI key** — it constructs `UploadedDocument` objects directly and never
-touches the LLM.
+This harness is now **committed** at `synthetic/stress.ts` and runs with
+`npm run stress` (24/24 passing against the readiness-index API). It needs **no
+OpenAI key** — it constructs `UploadedDocument` objects directly and never
+touches the LLM. This document reports the findings and keeps the original
+drop-in source for reference (Appendix A).
 
 ## Test dimensions
 
@@ -33,24 +34,24 @@ A harness covering all five dimensions was run against the scoring core. **27 of
 31 checks passed.** The four that didn't were genuinely informative — two were
 real robustness issues, two were wrong test expectations:
 
-### Finding 1 — floating-point noise at exact threshold boundaries (REAL BUG)
-`lib/assessors/delta.ts` computes `delta = Math.abs(fatZ − gpsZ) / gpsZ` and
-branches on `delta > 0.1` / `delta > 0.05`. At an *exact* 5% or 10% delta,
-floating-point rounding tips the value just over the threshold:
+### Finding 1 — floating-point noise at exact threshold boundaries (FIXED)
+`lib/assessors/delta.ts` computed `delta = Math.abs(fatZ − gpsZ) / gpsZ` and
+branched on `delta > 0.1` / `delta > 0.05`. At an *exact* 5% or 10% delta,
+floating-point rounding tipped the value just over the threshold:
 
 ```
-z = 0.126, gps = 0.120 → raw delta = 0.05000000000000004  → branches as > 5% (HIGH)
-z = 0.132, gps = 0.120 → raw delta = 0.10000000000000009  → branches as > 10% (DMAT)
+z = 0.126, gps = 0.120 → raw delta = 0.05000000000000004  → branched as > 5% (HIGH)
+z = 0.132, gps = 0.120 → raw delta = 0.10000000000000009  → branched as > 10% (DMAT)
 ```
 
-So a submission sitting *exactly* on the boundary is classified one severity
-higher than intended. **Recommended fix:** round the delta to ~4 decimal places
+So a submission sitting *exactly* on the boundary was classified one severity
+higher than intended. ✓ **Fixed:** the delta is rounded to 4 decimal places
 before comparing, so `0.05000000000000004 → 0.05` and `0.05 > 0.05` is false:
 ```ts
 const delta = Math.round((Math.abs(fatZ - gpsZ) / gpsZ) * 1e4) / 1e4;
 ```
-This is present in the current code and worth fixing — boundary determinism is
-exactly the kind of rigour a power-systems buyer expects.
+The harness now asserts the fixed behaviour explicitly: an exact 5.00% delta
+produces no finding and an exact 10.00% delta is HIGH, not DMAT.
 
 ### Finding 2 — an empty submission produces 7 LOW findings, not zero (BEHAVIOUR)
 With no documents, the clause assessor marks all 7 scorecard clauses `missing`
@@ -81,11 +82,12 @@ build.
 
 ## Appendix A — drop-in harness (targets the current scoring API)
 
-Save as `synthetic/stress.ts`. It imports the **current** scoring functions
-(`computeApprovalProbability`, `computeConfidenceInterval`,
-`computeTimeToApproval`). If/when the readiness-index reframe in `METHODOLOGY.md`
-lands, swap those for `computeReadinessIndex` / `computeRfiCycleRisk` and update
-the score-invariant checks accordingly.
+> **Note:** the committed `synthetic/stress.ts` is the source of truth and
+> already targets the readiness-index API (`computeReadinessIndex` /
+> `computeRfiCycleRisk`) with the boundary checks above. The listing below is the
+> original pre-reframe version, kept for reference; it imports the now-removed
+> `computeApprovalProbability` / `computeConfidenceInterval` /
+> `computeTimeToApproval` and will not run as-is.
 
 ```ts
 import {

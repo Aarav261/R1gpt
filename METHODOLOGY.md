@@ -1,9 +1,11 @@
 # Scoring methodology — what the number is, and what it must not claim
 
-> **Status of this document.** It describes the scoring as it exists in the code
-> today (`lib/scoring/engine.ts`) **and** proposes a reframe. The reframe is a
-> *recommendation only — it is NOT yet applied to the code.* Everything under
-> "Proposed reframe" is a to-do, not a description of current behaviour.
+> **Status of this document.** The reframe described under "Proposed reframe" is
+> now **applied** in `lib/scoring/engine.ts`: the score is a deterministic
+> readiness index (0–100), the sigmoid / confidence interval / month percentiles
+> are gone, and the weights are exposed as a transparent rubric. Section 1 below
+> is retained as the historical record of what the code *used* to do and why it
+> was attackable.
 
 This is the single most attackable surface in R1GPT. A NEM-literate judge — or a
 chartered power-systems engineer evaluating a purchase — will probe every number
@@ -16,9 +18,11 @@ on screen. The defensible position is narrow and we should hold it exactly:
 - The honest product is the **evidence chain** (a specific number-vs-number
   contradiction tied to an exact PSMG/NER citation), not the headline score.
 
-## 1. Current implementation (as coded today)
+## 1. Former implementation (historical — replaced by the reframe)
 
-From `lib/scoring/engine.ts`:
+This is what the code did *before* the reframe landed, kept here so the
+attack surface is documented. The current `lib/scoring/engine.ts` no longer
+implements any of §1.1–§1.4.
 
 ### 1.1 Severity penalties
 ```
@@ -61,40 +65,66 @@ probabilistic, and is the part worth keeping front-and-centre.
 | **Sigmoid squeeze** `−6·(raw−0.5)` | The −6 is arbitrary. It manufactures false precision and pushes scores toward 0/100 for visual drama, not statistical reason. |
 | **Time-to-approval P10/P50/P90 months** | "Why 14 months median?" has no answer. The buckets have zero empirical basis. |
 
-## 3. Proposed reframe (RECOMMENDED — not yet applied)
+## 3. The reframe (APPLIED)
 
-The reframe costs nothing in real value and removes every kill-shot above.
+The reframe cost nothing in real value and removed every kill-shot above. As
+implemented in `lib/scoring/engine.ts`:
 
-1. **Relabel to a deterministic "readiness index" (0–100).** Drop the word
-   *calibrated*. Drop the confidence interval. Replace the sigmoid with plain
-   subtraction so the user can read the arithmetic:
+1. **Deterministic "readiness index".** "Calibrated" is gone, the confidence
+   interval is gone, and the sigmoid is replaced with plain subtraction the user
+   can read:
    ```
-   readiness = max(0, 100 − Σ severity_weight)
-   severity_weight = { low: 4, medium: 12, high: 25, dmat_triggering: 45 }
+   readiness = clamp(0 .. CEILING, CEILING − Σ severity_weight)
+   CEILING = 95                                                     // CHECKLIST_CEILING
+   severity_weight = { low: 4, medium: 12, high: 25, dmat_triggering: 45 }   // SEVERITY_WEIGHT
    ```
-   State plainly: *"a severity-weighted readiness ranking — it tells you what to
-   fix first, not your odds with AEMO."*
+   The UI states plainly: *"a severity-weighted readiness ranking — illustrative,
+   not a forecast of AEMO's decision."*
 
-2. **Expose the weights as an editable triage rubric**, not a hidden formula.
-   "Here are our weights — tune them" is honest and defensible. A hidden sigmoid
-   posing as science is not.
+   **The index never reaches 100, by design.** Passing every R1GPT check means
+   "nothing in our finite checklist fired" — not proof of completeness. The
+   reserved 5-point headroom stands for the chartered-engineer review we can't
+   automate, so the tool refuses to print a perfect score. The index also
+   **saturates at 0**: a badly-failing submission floors out and stops
+   discriminating, which is fine because the signal there is the findings list,
+   not the number. Both rails are kept honest by the coverage line (§4).
 
-3. **Replace the month percentiles with a qualitative RFI-cycle risk band**
-   (minimal → elevated → high → severe). If a number is wanted, anchor it to a
-   *public* AEMO/CEC connection-timeframe statistic and show relative
-   improvement — never invent percentiles. Acceptable qualitative claim:
-   *"DMAT-triggering findings historically add multiple RFI cycles."*
+2. **Weights exposed as a transparent triage rubric** (`SEVERITY_WEIGHT`), not a
+   hidden formula.
 
-4. **Demote the score in the UI.** Lead with the evidence chain; put the index
-   in a footnote section labelled "illustrative, not a forecast."
+3. **Month percentiles replaced with a qualitative RFI-cycle risk band**
+   (minimal → elevated → high → severe), via `computeRfiCycleRisk`, each band
+   carrying a one-line rationale. The acceptable qualitative claim
+   (*"DMAT-triggering findings historically add multiple RFI cycles"*) is the
+   `severe`-band rationale.
 
-See `lib/scoring/engine.ts` for where each change lands, and `DEMO_SCRIPT.md`
-for how to present the reframed version. A worked stress-test of a deterministic
-readiness index (including edge cases the reframe must handle) is in
-`STRESS_TEST.md`.
+4. **Score demoted in the UI.** The gauge tops out at 95, drops the CI line, and
+   carries the "illustrative, not a forecast" disclaimer; the demo script leads
+   with the evidence chain.
 
-## 4. The one sentence to rehearse
+The committed stress harness (`npm run stress`) asserts the readiness invariants
+(clean → caps at 95, adding a finding never raises the score, severe stacks
+floor at 0, range [0,95], determinism) — see `STRESS_TEST.md`.
 
-> "It's a severity-weighted **readiness index**, not a probability. It ranks
-> what to fix first against the exact PSMG clause AEMO would cite — it does not
-> predict AEMO's decision, and we don't claim it does."
+## 4. The coverage line — why neither rail is a bare number
+
+A 100 reads as "guaranteed", a 0 as "hopeless"; both overclaim. The fix is to
+never show the index alone. Every report carries an **"X of N checks passed"**
+line beside the gauge, where the six assessors are the checks and N counts only
+the assessors that were *applicable* (had the inputs they need — the impedance
+delta is not counted if no FAT was uploaded). So:
+
+- The passing demo reads **95 · 6 of 6 checks passed** — high, but explicitly
+  "everything we can check passed", not "perfect".
+- A failing submission reads **0 · 2 of 6 checks passed** — the 0 is explained
+  by *which* checks fired, not presented as a precise score.
+
+`AuditReport.checks: CheckResult[]` (built in `lib/assessors/runner.ts`) is the
+full per-assessor breakdown; the UI summarises it as the coverage line.
+
+## 5. The one sentence to rehearse
+
+> "It's a severity-weighted **readiness index**, not a probability. It caps at 95
+> because passing every check isn't proof of completeness, and it ranks what to
+> fix first against the exact PSMG clause AEMO would cite — it does not predict
+> AEMO's decision, and we don't claim it does."
