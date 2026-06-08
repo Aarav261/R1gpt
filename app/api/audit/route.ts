@@ -2,10 +2,14 @@ import OpenAI from "openai";
 import { DocumentType, UploadedDocument } from "@/types/documents";
 import { extractDocument } from "@/lib/extraction/extractor";
 import { buildAuditReport } from "@/lib/report/builder";
-import { setLatestReport } from "@/lib/report/store";
+import { saveReport } from "@/lib/report/store";
+import { requireCan, guardError } from "@/lib/auth/guard";
+import { getProjectById } from "@/lib/projects/queries";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+// Reads per-request workspace context + DB; never statically cached.
+export const dynamic = "force-dynamic";
 
 const DOC_TYPES = Object.values(DocumentType);
 
@@ -33,8 +37,43 @@ export async function POST(req: Request) {
     );
   }
 
+  // Resolve the target workspace (form field, falling back to query) and gate
+  // the request before any extraction/assessment work runs.
+  const url = new URL(req.url);
+  const workspaceId =
+    (form.get("workspaceId") as string | null)?.trim() ||
+    url.searchParams.get("workspaceId")?.trim() ||
+    "";
+  if (!workspaceId) {
+    return new Response(
+      JSON.stringify({ error: "workspaceId is required." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  const guard = await requireCan(workspaceId, "upload");
+  if (!guard.ok) return guardError(guard);
+
+  // Resolve + validate the target project (must belong to this workspace).
+  const projectId =
+    (form.get("projectId") as string | null)?.trim() ||
+    url.searchParams.get("projectId")?.trim() ||
+    "";
+  if (!projectId) {
+    return new Response(JSON.stringify({ error: "projectId is required." }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const project = await getProjectById(projectId);
+  if (!project || project.workspaceId !== workspaceId) {
+    return new Response(JSON.stringify({ error: "Project not found." }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const project_name =
-    (form.get("project_name") as string | null)?.trim() || "Untitled Project";
+    (form.get("project_name") as string | null)?.trim() || project.name;
 
   // Collect uploaded files keyed by DocumentType value.
   const fileEntries: { type: DocumentType; file: File }[] = [];
@@ -77,7 +116,12 @@ export async function POST(req: Request) {
             send("scoring_complete", { readiness }),
         });
 
-        setLatestReport(report);
+        await saveReport({
+          workspaceId,
+          projectId,
+          userId: guard.user.id,
+          report,
+        });
 
         send("report_complete", report);
       } catch (err) {

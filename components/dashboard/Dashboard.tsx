@@ -28,6 +28,8 @@ import {
   saveLatestReport,
 } from "@/lib/dashboard/reportState";
 import type { AuditReport } from "@/types/report";
+import { useWorkspace } from "@/lib/workspaces/context";
+import { useProject } from "@/lib/projects/context";
 import { Overview } from "./views/Overview";
 import { Documents } from "./views/Documents";
 import { Audit } from "./views/Audit";
@@ -35,11 +37,14 @@ import { Issues } from "./views/Issues";
 import { Models } from "./views/Models";
 import { Intelligence } from "./views/Intelligence";
 import { AiDrawer } from "./AiDrawer";
+import { NotificationBell, type Notification } from "./NotificationBell";
 
 type ViewKey = "overview" | "documents" | "audit" | "issues" | "models" | "intel";
 type NavItem = { key: ViewKey; label: string; badge?: string; tone?: "red" | "amber" };
 
 export function Dashboard() {
+  const { workspace } = useWorkspace();
+  const { project } = useProject();
   const [view, setView] = useState<ViewKey>("overview");
   const [roleKey, setRoleKey] = useState<RoleKey>("consultant");
   const [selectedDoc, setSelectedDoc] = useState<string | null>(null);
@@ -56,12 +61,12 @@ export function Dashboard() {
   // Hydrate the latest real audit on mount: sessionStorage first (instant),
   // then the server store as source of truth (covers a fresh tab / reload).
   useEffect(() => {
-    const cached = loadLatestReportSync();
-    if (cached) setLiveReport(cached);
-    fetchLatestReport().then((r) => {
+    const cached = loadLatestReportSync(project.id);
+    setLiveReport(cached);
+    fetchLatestReport(project.id).then((r) => {
       if (r) setLiveReport(r);
     });
-  }, []);
+  }, [project.id]);
 
   // ---- Live projections (fall back to static mock when no report yet) ----
   const auditItems: AuditItem[] = useMemo(
@@ -85,7 +90,7 @@ export function Dashboard() {
     [liveReport]
   );
 
-  const projectName = liveReport?.project_name ?? PROJECT.name;
+  const projectName = liveReport?.project_name ?? project.name;
   const blockingCount = auditItems.filter((a) => a.s === "fail").length;
   const openIssues = issueItems.filter((i) => i.status === "open").length;
 
@@ -118,6 +123,50 @@ export function Dashboard() {
     { key: "models", label: "OEM Models" },
   ];
 
+  // Notifications: derived live from the same projections that feed the views —
+  // blocking audit failures, open RFIs, and the recent activity feed. Clicking
+  // one jumps to the relevant view (see NotificationBell).
+  const notifications: Notification[] = useMemo(() => {
+    const out: Notification[] = [];
+
+    auditItems
+      .filter((a) => a.s === "fail")
+      .forEach((a, i) =>
+        out.push({
+          id: `audit-${i}-${a.name}`,
+          tone: "red",
+          title: `Blocking: ${a.name}`,
+          body: a.d,
+          view: "audit",
+        })
+      );
+
+    issueItems
+      .filter((i) => i.status === "open")
+      .forEach((iss) =>
+        out.push({
+          id: `issue-${iss.id}`,
+          tone: iss.sev === "minor" ? "amber" : "red",
+          title: `${iss.src} ${iss.sev} · ${iss.id}`,
+          body: iss.title,
+          view: "issues",
+        })
+      );
+
+    activity.slice(0, 5).forEach((a, i) =>
+      out.push({
+        id: `activity-${i}-${a.who}-${a.when}`,
+        tone: a.tone === "grey" ? "blue" : a.tone,
+        title: a.who,
+        body: a.txt,
+        when: `${a.when} ago`,
+        view: "overview",
+      })
+    );
+
+    return out;
+  }, [auditItems, issueItems, activity]);
+
   // Resolve the drawer's issue + AI draft from whichever issue set is active.
   const activeIssue = drawerIssue
     ? issueItems.find((i) => i.id === drawerIssue) ?? null
@@ -138,9 +187,9 @@ export function Dashboard() {
     setAuditError(null);
     setProgress(null);
     try {
-      const report = await runDemoAudit(setProgress);
+      const report = await runDemoAudit(workspace.id, project.id, setProgress);
       setLiveReport(report);
-      saveLatestReport(report);
+      saveLatestReport(project.id, report);
     } catch (err) {
       setAuditError(err instanceof Error ? err.message : "Audit failed.");
     } finally {
@@ -150,17 +199,16 @@ export function Dashboard() {
   }
 
   return (
-    <div className="grid h-screen grid-cols-[230px_1fr] grid-rows-[48px_1fr] overflow-hidden">
+    <div className="grid h-full grid-cols-[230px_1fr] grid-rows-[48px_1fr] overflow-hidden">
       {/* Top bar */}
       <header className="col-span-2 flex items-center justify-between border-b border-hairline bg-canvas px-5">
-        <div className="flex items-center gap-3">
-          <div className="grid h-7 w-7 place-items-center bg-ibm-blue text-xs font-semibold text-white">
-            R1
-          </div>
-          <div className="leading-tight">
-            <div className="text-sm font-semibold tracking-carbon text-ink">R1GPT</div>
-            <div className="-mt-0.5 text-[11px] text-ink-subtle">Connection Approval Workspace</div>
-          </div>
+        <div className="flex items-center gap-2 leading-tight">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-subtle">
+            Active project
+          </span>
+          <span className="max-w-[280px] truncate text-sm font-semibold tracking-carbon text-ink">
+            {projectName}
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -177,13 +225,17 @@ export function Dashboard() {
               <option value="aemo">AEMO Reviewer</option>
             </select>
           </div>
-          <Link href="/upload" className="cds-btn cds-btn--primary cds-btn--sm">
+          <Link
+            href={`/w/${workspace.slug}/p/${project.slug}/upload`}
+            className="cds-btn cds-btn--primary cds-btn--sm"
+          >
             + New audit
           </Link>
-          <div className="relative grid h-8 w-8 place-items-center border border-hairline bg-canvas">
-            <span className="text-sm">🔔</span>
-            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 bg-error" />
-          </div>
+          <NotificationBell
+            notifications={notifications}
+            storageKey={project.id}
+            onOpenView={setView}
+          />
         </div>
       </header>
 

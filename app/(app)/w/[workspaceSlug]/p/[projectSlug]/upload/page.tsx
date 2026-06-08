@@ -7,6 +7,9 @@ import { DocumentType } from "@/types/documents";
 import type { AuditReport } from "@/types/report";
 import { saveLatestReport } from "@/lib/dashboard/reportState";
 import { UploadZone, DocSlotConfig } from "@/components/upload/UploadZone";
+import { useWorkspace } from "@/lib/workspaces/context";
+import { useProject } from "@/lib/projects/context";
+import { can } from "@/lib/auth/permissions";
 
 const SLOTS: DocSlotConfig[] = [
   {
@@ -70,8 +73,11 @@ type FileMap = Partial<Record<DocumentType, File>>;
 
 export default function HomePage() {
   const router = useRouter();
+  const { workspace, role } = useWorkspace();
+  const { project } = useProject();
+  const canUpload = can(role, "upload");
   const [files, setFiles] = useState<FileMap>({});
-  const [projectName, setProjectName] = useState("");
+  const [projectName, setProjectName] = useState(project.name);
   const [running, setRunning] = useState(false);
   const [step, setStep] = useState(-1);
   const [error, setError] = useState<string | null>(null);
@@ -87,10 +93,11 @@ export default function HomePage() {
 
   const canRun = useMemo(
     () =>
+      canUpload &&
       REQUIRED.every((t) => files[t]) &&
       projectName.trim().length > 0 &&
       !running,
-    [files, projectName, running]
+    [canUpload, files, projectName, running]
   );
 
   const loadDemo = useCallback(async (set: "fail" | "pass" = "fail") => {
@@ -120,6 +127,8 @@ export default function HomePage() {
 
     const form = new FormData();
     form.append("project_name", projectName.trim());
+    form.append("workspaceId", workspace.id);
+    form.append("projectId", project.id);
     for (const [type, file] of Object.entries(files)) {
       if (file) form.append(type, file);
     }
@@ -155,9 +164,11 @@ export default function HomePage() {
           }
           if (evt.event === "report_complete") {
             const report = evt.data as AuditReport;
-            // Persists r1gpt:<id> (report page) AND r1gpt:latest (workspace).
-            saveLatestReport(report);
-            router.push(`/audit/${report.audit_id}`);
+            // Persists r1gpt:<id> (report page) AND the project's latest pointer.
+            saveLatestReport(project.id, report);
+            router.push(
+              `/w/${workspace.slug}/p/${project.slug}/audit/${report.audit_id}`,
+            );
             return;
           }
         }
@@ -167,17 +178,17 @@ export default function HomePage() {
       setRunning(false);
       setStep(-1);
     }
-  }, [files, projectName, router]);
+  }, [files, projectName, router, workspace.id, workspace.slug, project.id, project.slug]);
 
   return (
-    <main className="mx-auto max-w-[780px] px-5 py-12">
+    <main className="mx-auto max-w-[780px] overflow-y-auto px-5 py-12">
       {/* Header */}
       <header className="mb-8">
         <Link
-          href="/"
+          href={`/w/${workspace.slug}/p/${project.slug}`}
           className="font-sans text-xs text-ink-subtle hover:text-ibm-blue"
         >
-          ← Back to workspace
+          ← Back to project
         </Link>
         <div className="mt-3 flex items-baseline gap-3">
           <h1 className="font-sans text-4xl font-light text-ink">
@@ -192,6 +203,12 @@ export default function HomePage() {
         </p>
       </header>
 
+      {!canUpload && (
+        <p className="mb-6 rounded-none border border-hairline bg-surface-1 px-4 py-2 font-sans text-sm text-ink-muted">
+          Viewer access — uploading is disabled
+        </p>
+      )}
+
       {/* Upload grid */}
       <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
         {SLOTS.map((slot) => (
@@ -200,7 +217,7 @@ export default function HomePage() {
             config={slot}
             file={files[slot.type as DocumentType] ?? null}
             onFile={(f) => setFile(slot.type as DocumentType, f)}
-            disabled={running}
+            disabled={running || !canUpload}
           />
         ))}
       </section>
@@ -214,7 +231,7 @@ export default function HomePage() {
           type="text"
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
-          disabled={running}
+          disabled={running || !canUpload}
           placeholder="e.g. Ironbark Solar Farm 400MW"
           className="w-full rounded-none border border-hairline bg-surface-1 px-4 py-3 font-sans text-sm text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-ibm-blue"
         />
@@ -234,7 +251,7 @@ export default function HomePage() {
         </button>
         <button
           onClick={() => loadDemo("fail")}
-          disabled={running}
+          disabled={running || !canUpload}
           className="font-sans text-sm text-ibm-blue underline-offset-4 hover:underline disabled:opacity-50"
         >
           Load failing demo
@@ -242,7 +259,7 @@ export default function HomePage() {
         <span className="font-mono text-xs text-ink-subtle">·</span>
         <button
           onClick={() => loadDemo("pass")}
-          disabled={running}
+          disabled={running || !canUpload}
           className="font-sans text-sm text-success underline-offset-4 hover:underline disabled:opacity-50"
         >
           Load passing demo

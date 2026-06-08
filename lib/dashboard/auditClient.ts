@@ -28,6 +28,8 @@ interface DemoPayload {
  * server; surfaces a readable error otherwise.
  */
 export async function runDemoAudit(
+  workspaceId: string,
+  projectId: string,
   onProgress?: (p: AuditProgress) => void
 ): Promise<AuditReport> {
   const demoRes = await fetch("/api/demo");
@@ -36,6 +38,8 @@ export async function runDemoAudit(
 
   const form = new FormData();
   form.set("project_name", demo.project_name);
+  form.set("workspaceId", workspaceId);
+  form.set("projectId", projectId);
   for (const d of demo.docs) {
     const name = d.filename.replace(/\.pdf$/i, ".txt");
     form.set(d.doc_type, new File([d.content], name, { type: "text/plain" }));

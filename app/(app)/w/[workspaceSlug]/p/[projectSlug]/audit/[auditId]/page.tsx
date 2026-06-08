@@ -11,6 +11,8 @@ import { PredictedRFIs } from "@/components/audit/PredictedRFIs";
 import { RectificationPlan } from "@/components/audit/RectificationPlan";
 import { TimelineEstimate } from "@/components/audit/TimelineEstimate";
 import { SkeletonReport } from "@/components/ui/SkeletonLoader";
+import { useWorkspace } from "@/lib/workspaces/context";
+import { useProject } from "@/lib/projects/context";
 
 const SECTIONS = [
   { id: "verdict", label: "Readiness verdict" },
@@ -42,6 +44,8 @@ export default function AuditReportPage({
   params: { auditId: string };
 }) {
   const { auditId } = params;
+  const { workspace } = useWorkspace();
+  const { project } = useProject();
   const [report, setReport] = useState<AuditReport | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,14 +63,16 @@ export default function AuditReportPage({
       setReport(cached);
       return;
     }
-    fetch(`/api/audit/${auditId}`)
+    fetch(
+      `/api/audit/${auditId}?projectId=${encodeURIComponent(project.id)}`
+    )
       .then(async (res) => {
         if (!res.ok) throw new Error("Report not found.");
         return res.json();
       })
       .then((data: AuditReport) => setReport(data))
       .catch(() => setError("Report not found. It may have expired — re-run the audit."));
-  }, [auditId]);
+  }, [auditId, project.id]);
 
   const counts = useMemo(() => {
     const f = report?.findings ?? [];
@@ -91,7 +97,7 @@ export default function AuditReportPage({
       <main className="mx-auto max-w-2xl px-5 py-20 text-center">
         <p className="font-mono text-sm text-error">{error}</p>
         <Link
-          href="/upload"
+          href={`/w/${workspace.slug}/p/${project.slug}/upload`}
           className="mt-4 inline-block font-sans text-sm text-ibm-blue hover:underline"
         >
           ← Back to upload
@@ -109,11 +115,11 @@ export default function AuditReportPage({
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl gap-8 px-5 py-8">
+    <div className="mx-auto flex max-w-6xl gap-8 overflow-y-auto px-5 py-8">
       {/* Sidebar */}
       <aside className="sticky top-8 hidden h-fit w-[240px] shrink-0 lg:block">
         <Link
-          href="/upload"
+          href={`/w/${workspace.slug}/p/${project.slug}/upload`}
           className="font-sans text-xs text-ink-subtle hover:text-ink-muted"
         >
           ← New audit
